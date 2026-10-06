@@ -1,0 +1,9 @@
+.env
+__pycache__/
+extractos/
+*.xlsx
+*.xls
+*.csv
+!tests/fixtures/*
+*.pdf
+.claude/

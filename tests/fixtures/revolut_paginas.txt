@@ -1,0 +1,129 @@
+Extracto de cuenta conjunta en EUR
+
+Generado el 4 oct 2026
+Revolut Bank UAB Sucursal En España
+© 2026 Revolut Bank UAB Sucursal En España
+Revolut.
+Página  de
+1
+3
+Resumen del saldo
+Producto
+Saldo inicial
+Dinero saliente
+Dinero entrante
+Saldo final
+Cuenta (Cuenta Corriente)
+33,86€
+170,33€
+1.622,97€
+1.486,50€
+Total
+33,86€
+170,33€
+1.622,97€
+1.486,50€
+El saldo de tu estado de cuenta puede ser diferente al mostrado en tu aplicación.
+Pendientes desde el 1 de septiembre de 2026 al 4 de octubre de 2026
+Fecha de la
+transacción
+Descripción
+Dinero saliente
+Dinero entrante
+3 oct 2026
+Ara
+86,00€
+A Ara, Algaida
+Tarjeta: 000000******0001
+Nombre de
+la cuenta
+TITULAR UNO &
+TITULAR DOS
+IBAN
+BIC
+ES0000000000000000000001
+REVOESM2
+
+TITULAR UNO
+Calle Falsa 1
+=== PAGINA ===
+Extracto de cuenta conjunta en EUR
+
+Generado el 4 oct 2026
+Revolut Bank UAB Sucursal En España
+Revolut.
+Página  de
+2
+3
+Transacciones de la cuenta desde el 1 de septiembre de 2026 al 4 de octubre de 2026
+Fecha de la
+transacción
+Fecha valor
+Descripción
+Dinero saliente
+Dinero entrante
+Saldo
+1 sept 2026
+1 sept 2026
+Pago de TITULAR UNO
+1.500,00€
+1.533,86€
+Referencia: Comun
+De TITULAR UNO, ES0000000000000000000002
+1 sept 2026
+1 sept 2026
+Una recarga de Apple Pay con *0000
+100,00€
+1.633,86€
+De *0000
+3 sept 2026
+4 sept 2026
+Mercadona
+62,37€
+1.571,49€
+A Mercadona Estadi Balea, Palma Mallorc, ESP
+Tarjeta: 000000******0001
+6 sept 2026
+10 sept 2026
+H&M
+22,97€
+1.548,52€
+A H M, Barcelona, ESP
+Tarjeta: 000000******0002
+=== PAGINA ===
+Extracto de cuenta conjunta en EUR
+
+Generado el 4 oct 2026
+Revolut Bank UAB Sucursal En España
+Revolut.
+Página  de
+3
+3
+Fecha de la
+transacción
+Fecha valor
+Descripción
+Dinero saliente
+Dinero entrante
+Saldo
+17 sept 2026
+18 sept 2026
+H&M
+22,97€
+1.571,49€
+De H M, Barcelona, ESP
+Tarjeta: 000000******0002
+24 sept 2026
+24 sept 2026
+To Titular Dos
+70,00€
+1.501,49€
+Referencia: Enviada desde Revolut
+A Titular Dos, ES0000000000000000000003
+4 oct 2026
+4 oct 2026
+Netflix
+14,99€
+1.486,50€
+A Netflix.com, Madrid, ESP
+Tarjeta: 000000******0001

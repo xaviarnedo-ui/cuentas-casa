@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cuentas">
+  <title>Cuentas de casa</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=7">
+</head>
+<body>
+  <section id="login" class="login" hidden>
+    <h1>Cuentas de casa</h1>
+    <form id="login-form">
+      <input id="login-email" type="email" autocomplete="username" placeholder="Email" required>
+      <input id="login-pass" type="password" autocomplete="current-password" placeholder="Contraseña" required>
+      <button type="submit" class="boton">Entrar</button>
+      <p id="login-error" class="error" hidden>Email o contraseña incorrectos.</p>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <header class="barra">
+      <nav id="pestanas" class="pestanas"></nav>
+      <span id="demo" class="etiqueta" hidden>Demo</span>
+      <button id="salir" class="enlace" type="button">Salir</button>
+    </header>
+    <div id="selector-mes" class="selector-mes">
+      <button id="mes-ant" type="button" aria-label="Mes anterior">‹</button>
+      <h1 id="mes-nombre"></h1>
+      <button id="mes-sig" type="button" aria-label="Mes siguiente">›</button>
+    </div>
+
+    <main id="vista-mes">
+      <p id="sin-cuentas" class="vacio" hidden>Todavía no tienes cuentas.</p>
+      <div class="total">
+        <span id="total"></span>
+        <small id="comparacion"></small>
+        <small id="saldo-efectivo" class="saldo-efectivo" hidden></small>
+      </div>
+      <div id="grafico" class="grafico"></div>
+      <ul id="lista-categorias" class="lista"></ul>
+      <button id="ver-todos" class="enlace" type="button">Ver todos los movimientos</button>
+    </main>
+
+    <main id="vista-movs" hidden>
+      <div class="cabecera-movs">
+        <button id="volver" class="enlace" type="button">‹ Volver</button>
+        <strong id="titulo-movs"></strong>
+      </div>
+      <input id="buscar" type="search" placeholder="Buscar">
+      <ul id="lista-movs" class="lista"></ul>
+    </main>
+
+    <main id="vista-piso" hidden>
+      <div class="selector-mes">
+        <button id="piso-ant" type="button" aria-label="Año anterior">‹</button>
+        <h1 id="piso-anio"></h1>
+        <button id="piso-sig" type="button" aria-label="Año siguiente">›</button>
+      </div>
+      <div class="total">
+        <span id="piso-neto"></span>
+        <small>Rendimiento neto del año</small>
+      </div>
+      <h2 class="seccion">Ingresos y gastos</h2>
+      <ul class="lista">
+        <li class="fija"><span class="icono">🔑</span><div class="cuerpo"><span class="nombre">Alquiler cobrado</span></div><span id="piso-alquiler" class="importe positivo"></span></li>
+      </ul>
+      <ul id="piso-gastos" class="lista"></ul>
+      <h2 class="seccion">Suministros</h2>
+      <ul class="lista">
+        <li class="fija"><span class="icono">💡</span><div class="cuerpo"><span class="nombre">Luz y gas</span><small id="piso-luzgas-detalle"></small></div><span id="piso-luzgas-dif" class="importe"></span></li>
+        <li class="fija"><span class="icono">🚰</span><div class="cuerpo"><span class="nombre">Agua</span><small id="piso-agua-detalle"></small></div><span id="piso-agua-dif" class="importe"></span></li>
+      </ul>
+      <p class="nota">La diferencia de luz y gas se compensa con la regularización anual de Iberdrola.</p>
+      <h2 class="seccion">Mes a mes</h2>
+      <ul id="piso-meses" class="lista"></ul>
+      <h2 class="seccion">Facturas de agua</h2>
+      <ul id="piso-facturas-agua" class="lista"></ul>
+    </main>
+
+    <main id="vista-patrimonio" hidden>
+      <div class="total">
+        <span id="pat-total"></span>
+        <small id="pat-variacion"></small>
+      </div>
+      <div id="pat-grafico" class="grafico"></div>
+      <ul id="pat-cuentas" class="lista"></ul>
+      <p id="pat-comun" class="nota"></p>
+    </main>
+
+    <button id="fab" class="fab" type="button" aria-label="Apuntar gasto">+</button>
+  </div>
+
+  <dialog id="hoja-mov" class="hoja">
+    <form id="ed-form">
+      <h2 id="ed-comercio"></h2>
+      <p id="ed-detalle" class="detalle"></p>
+      <img id="ed-ticket" class="ticket-img" alt="Foto del ticket" hidden>
+      <label class="foto"><input id="ed-foto" type="file" accept="image/*" hidden><span id="ed-foto-txt">📷 Añadir ticket</span></label>
+      <div id="ed-cats" class="chips"></div>
+      <label id="ed-todos-fila" class="check"><input id="ed-todos" type="checkbox"> <span id="ed-todos-txt"></span></label>
+      <textarea id="ed-nota" rows="2" placeholder="Nota"></textarea>
+      <label class="check"><input id="ed-no-gasto" type="checkbox"> No es un gasto (no cuenta en el total)</label>
+      <p id="ed-error" class="error" hidden></p>
+      <div class="acciones">
+        <button id="ed-borrar" class="boton peligro" type="button">Borrar</button>
+        <button id="ed-cancelar" class="boton secundario" type="button">Cancelar</button>
+        <button class="boton" type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="hoja-nuevo" class="hoja">
+    <form id="nu-form">
+      <h2>Apuntar a mano</h2>
+      <button id="nu-alquiler" type="button" class="enlace" hidden>🔑 Alquiler cobrado (950 €)</button>
+      <input id="nu-importe" class="importe-grande" inputmode="decimal" placeholder="0,00 €" autocomplete="off">
+      <div class="signo"><button id="nu-gasto" type="button" class="chip elegida">− Gasto</button><button id="nu-entrada" type="button" class="chip">+ Entrada</button></div>
+      <div id="nu-cats" class="chips"></div>
+      <select id="nu-cuenta"></select>
+      <input id="nu-fecha" type="date">
+      <input id="nu-nota" placeholder="Nota (opcional)">
+      <label class="foto"><input id="nu-foto" type="file" accept="image/*" hidden><span id="nu-foto-txt">📷 Añadir ticket</span></label>
+      <p id="nu-error" class="error" hidden></p>
+      <div class="acciones">
+        <button id="nu-cancelar" class="boton secundario" type="button">Cancelar</button>
+        <button class="boton" type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="aviso" class="aviso" hidden></div>
+
+  <script src="supabase-js.min.js?v=7"></script>
+  <script src="supabase-client.js?v=7"></script>
+  <script src="calculos.js?v=7"></script>
+  <script src="datos.js?v=7"></script>
+  <script src="datos-demo.js?v=7"></script>
+  <script src="tickets.js?v=7"></script>
+  <script src="ui-mes.js?v=7"></script>
+  <script src="ui-movs.js?v=7"></script>
+  <script src="ui-nuevo.js?v=7"></script>
+  <script src="ui-piso.js?v=7"></script>
+  <script src="ui-patrimonio.js?v=7"></script>
+  <script src="app.js?v=7"></script>
+</body>
+</html>
