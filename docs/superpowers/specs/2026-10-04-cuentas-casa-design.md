@@ -38,7 +38,7 @@ Extracto banco ──► Xavi ──► Claude ejecuta cuentas.py ──► Supa
 - **Frontend:** PWA en HTML/CSS/JS vanilla (mismo patrón que carga-gps / nexo-ideas), alojada en GitHub Pages. Instalable en el móvil. Usa `supabase-js` con la clave anon.
 - **Backend:** proyecto Supabase **nuevo y dedicado** (no se reutilizan los de hábitos/GPS). Si el plan gratuito ya tiene 2 proyectos activos, se decide al montar (pausar uno o esquema separado).
 - **Importación:** script Python `cuentas.py` en el Mac de Xavi, con la clave `service_role` en `.env` (en `.gitignore`, nunca en el repo).
-- **Repo:** `~/Desktop/cuentas/`, publicado en GitHub. Solo código; ningún dato bancario en el repo.
+- **Repo:** `~/Desktop/NEXO/Otros-proyectos/cuentas/`, publicado en GitHub. Solo código; ningún dato bancario en el repo.
 
 ## 4. Modelo de datos
 

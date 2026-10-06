@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Repo: `~/Desktop/cuentas/`. Nunca se commitean extractos (`*.pdf`, `*.xlsx`, `*.xls`, `*.csv`) ni `.env` (ya en `.gitignore`).
+- Repo: `~/Desktop/NEXO/Otros-proyectos/cuentas/`. Nunca se commitean extractos (`*.pdf`, `*.xlsx`, `*.xls`, `*.csv`) ni `.env` (ya en `.gitignore`).
 - Importes siempre en **céntimos enteros**; negativo = sale dinero.
 - Gasto de una categoría = −(suma de `importe_cent`) de sus movimientos con `no_es_gasto = false` y categoría con `cuenta_como_gasto = true` o sin categoría. Las devoluciones restan.
 - Mes de un movimiento = **fecha de transacción**.
@@ -310,7 +310,7 @@ if __name__ == "__main__":
 
 - [ ] **Step 3: Ejecutar y ver que falla**
 
-Run: `cd ~/Desktop/cuentas && python3 -m unittest discover -s tests -t . -v`
+Run: `cd ~/Desktop/NEXO/Otros-proyectos/cuentas && python3 -m unittest discover -s tests -t . -v`
 Expected: ERROR `ModuleNotFoundError: No module named 'importador'` (o `cannot import name`).
 
 - [ ] **Step 4: Implementar `importador/modelo.py`**
@@ -978,7 +978,7 @@ Claude guía a Xavi, paso a paso:
 4. Authentication → Sign In / Providers → desactivar *Allow new users to sign up*.
 5. SQL Editor → ejecutar `supabase/perfiles.sql`. Expected: 2 filas (Xavi, Andrea).
 6. SQL Editor → ejecutar `supabase/test_rls.sql`. Expected: error `RLS_OK: ...`. Si sale `FALLO: ...`, se corrige `schema.sql` (y su copia en la base de datos) antes de seguir.
-7. Project Settings → API Keys: Xavi pega en el chat la **URL** y la clave **anon/publishable** (son públicas). La **service_role/secret** NO va al chat: Xavi la pone él mismo en `~/Desktop/cuentas/.env` (Task 4, paso 5).
+7. Project Settings → API Keys: Xavi pega en el chat la **URL** y la clave **anon/publishable** (son públicas). La **service_role/secret** NO va al chat: Xavi la pone él mismo en `~/Desktop/NEXO/Otros-proyectos/cuentas/.env` (Task 4, paso 5).
 
 ---
 
@@ -1257,7 +1257,7 @@ GitHub Pages redespliega en ~1 minuto.
 
 - [ ] **Step 5: [Xavi] Crear `.env`**
 
-Xavi ejecuta `cp ~/Desktop/cuentas/.env.example ~/Desktop/cuentas/.env` y pega él mismo la URL y la clave de servicio. Comprobación (Claude): `python3 cuentas.py categorias` → Expected: 12 líneas, de `super` a `transferencias`.
+Xavi ejecuta `cp ~/Desktop/NEXO/Otros-proyectos/cuentas/.env.example ~/Desktop/NEXO/Otros-proyectos/cuentas/.env` y pega él mismo la URL y la clave de servicio. Comprobación (Claude): `python3 cuentas.py categorias` → Expected: 12 líneas, de `super` a `transferencias`.
 
 - [ ] **Step 6: Commit**
 
@@ -1513,7 +1513,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - [ ] **Step 1: Copiar supabase-js y escribir `supabase-client.js`**
 
 ```bash
-cp ~/Desktop/nexo-ideas/supabase-js.min.js ~/Desktop/cuentas/supabase-js.min.js
+cp ~/Desktop/nexo-ideas/supabase-js.min.js ~/Desktop/NEXO/Otros-proyectos/cuentas/supabase-js.min.js
 ```
 
 `supabase-client.js` (con los valores que Xavi pegó en el Task 3):
@@ -2068,7 +2068,7 @@ icono(180).convert("RGB").save("icons/apple-touch-icon.png")
 print("iconos generados en icons/.")
 ```
 
-Run: `cd ~/Desktop/cuentas && python3 gen_icons.py && touch .nojekyll`
+Run: `cd ~/Desktop/NEXO/Otros-proyectos/cuentas && python3 gen_icons.py && touch .nojekyll`
 Expected: `iconos generados en icons/.`
 
 - [ ] **Step 8: Configurar la vista previa**
@@ -2081,7 +2081,7 @@ Comprobar si existe `~/Desktop/.claude/launch.json` (el directorio de trabajo de
     {
       "name": "cuentas",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "/Users/xaviarnedo/Desktop/cuentas"],
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "/Users/xaviarnedo/Desktop/NEXO/Otros-proyectos/cuentas"],
       "port": 8765
     }
   ]
@@ -2476,7 +2476,7 @@ Expected: sin salida (no hay extractos ni `.env` a punto de subirse).
 
 Xavi ejecuta (`gh repo create` lo bloquea el clasificador si lo lanza Claude):
 ```bash
-cd ~/Desktop/cuentas && ~/.local/bin/gh repo create xaviarnedo-ui/cuentas-casa --public --source=. --push
+cd ~/Desktop/NEXO/Otros-proyectos/cuentas && ~/.local/bin/gh repo create xaviarnedo-ui/cuentas-casa --public --source=. --push
 ```
 ```bash
 ~/.local/bin/gh api -X POST repos/xaviarnedo-ui/cuentas-casa/pages -f "source[branch]=main" -f "source[path]=/"
