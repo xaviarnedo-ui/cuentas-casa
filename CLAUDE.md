@@ -17,7 +17,17 @@ Spec: `docs/superpowers/specs/2026-10-04-cuentas-casa-design.md`.
      Bizum de la inquilina → `piso-luz-gas` o `piso-agua`). Los nombres viven solo en las reglas
      de la BD, nunca en el repo.
 
+   - Reparto de una compra: si la común paga algo y luego uno de los dos (o un amigo) devuelve su
+     parte, ese ingreso lleva la categoría de la compra, no `transferencias` (así resta del gasto
+     común). En la cuenta personal de Xavi, el pago correspondiente lleva también esa categoría.
+     Las reglas por nombre lo mandan a `transferencias`: cambiarlo a mano en ese movimiento. Si
+     un Bizum/recarga vuestro cae el mismo día que una compra en la común, pregunta a Xavi.
+     Si la parte va dentro de una recarga mayor (p. ej. 506 = 500 aportación + 6 compra), no se
+     toca el importado: dos manuales en la común, +parte en la categoría y −parte en `transferencias`.
+
 3. Resume a Xavi: nuevos, ya estaban, saldo y gasto nuevo por mes.
+
+Andrea no lleva su cuenta personal en la app (solo la común): no hay lector de Sabadell.
 
 - Ids de categoría: `python3 cuentas.py categorias`.
 - Cadencia: cuentas corrientes cada semana; ahorro/inversión cada mes (fase 3).
