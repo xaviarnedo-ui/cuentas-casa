@@ -52,7 +52,7 @@ Xavi pasa el saldo de MyInvestor, Trade Republic y MyAXA el último día de cada
 
 ### Deuda con los padres (cuenta `deuda-padres`, tipo deuda)
 
-Empieza en −5.000 € (2026-10-06). Su saldo sale de sus movimientos y resta en Patrimonio.
+Empieza en −5.000 € (2026-09-01). Su saldo sale de sus movimientos y resta en Patrimonio.
 Cuando Xavi devuelva dinero: el pago (CaixaBank o efectivo) va a `transferencias` y además se añade
 en `deuda-padres` un movimiento manual de +importe (comercio "Devolución a mis padres", categoría
 `transferencias`). No usar `cuentas.py saldo` para esta cuenta.
