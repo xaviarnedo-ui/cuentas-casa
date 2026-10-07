@@ -60,8 +60,9 @@ en `deuda-padres` un movimiento manual de +importe (comercio "Devolución a mis 
 ### Piso, hipoteca y coche (patrimonio real)
 
 - `piso-cornella` (tipo inmueble) y `coche` (tipo vehiculo): valor de mercado ESTIMADO, registrado con
-  `cuentas.py saldo <id> <importe> --fecha AAAA-MM-DD`. Revisar una vez al año (piso: €/m² de la zona;
-  coche: precio de segunda mano). Explicar a Xavi de dónde sale cada valor.
+  `cuentas.py saldo <id> <importe> --fecha AAAA-MM-DD`. Revisar cada 6 meses, a 31 de marzo y 30 de
+  septiembre: cuando Xavi pase los saldos de fin de marzo o de septiembre, actualizar también piso
+  (€/m² de la zona) y coche (precio de segunda mano) con esa fecha. Explicar a Xavi de dónde sale cada valor.
 - `hipoteca-piso` (tipo deuda): capital pendiente inicial a 2026-09-01 + un movimiento manual por cada
   cuota (comercio "Amortización", +capital, `transferencias`) ya cargado hasta el final (fijo 1,65 %,
   cuota 494,33 € el día 1, vence 2052-02-01). Si Xavi amortiza anticipadamente o da un capital
