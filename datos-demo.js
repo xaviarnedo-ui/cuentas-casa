@@ -10,7 +10,10 @@
     { id: "myinvestor", nombre: "MyInvestor", banco: "MyInvestor", tipo: "inversion", owner: "demo-xavi", orden: 4 },
     { id: "traderepublic", nombre: "Trade Republic", banco: "Trade Republic", tipo: "inversion", owner: "demo-xavi", orden: 5 },
     { id: "myaxa", nombre: "MyAXA", banco: "AXA", tipo: "ahorro", owner: "demo-xavi", orden: 6 },
-    { id: "deuda-padres", nombre: "Deuda con mis padres", banco: "Familia", tipo: "deuda", owner: "demo-xavi", orden: 7 }
+    { id: "deuda-padres", nombre: "Deuda con mis padres", banco: "Familia", tipo: "deuda", owner: "demo-xavi", orden: 7 },
+    { id: "piso", nombre: "Piso", banco: "Inmueble", tipo: "inmueble", owner: "demo-xavi", orden: 8 },
+    { id: "hipoteca", nombre: "Hipoteca del piso", banco: "Banco", tipo: "deuda", owner: "demo-xavi", orden: 9 },
+    { id: "coche", nombre: "Coche", banco: "Vehículo", tipo: "vehiculo", owner: "demo-xavi", orden: 10 }
   ];
   var categorias = [
     ["super", "Súper", "🛒", true], ["casa", "Casa", "🏠", true], ["restaurantes", "Restaurantes", "🍽️", true],
@@ -73,6 +76,8 @@
   apunte("xavi", anio + "-06-15", -32000, "IBI", "piso-ibi");
   apunte("efectivo", mesActual + "-03", -1250, "Ferretería", "casa");
   apunte("deuda-padres", mesActual + "-01", -500000, "Préstamo de mis padres", "transferencias");
+  apunte("hipoteca", anio + "-01-01", -12000000, "Capital pendiente", "transferencias");
+  for (var mh = 2; mh <= mesNum; mh++) apunte("hipoteca", anio + "-" + String(mh).padStart(2, "0") + "-01", 32000, "Amortización", "transferencias");
 
   // Saldos de fin de mes de los últimos 6 meses (el más antiguo primero) para la pestaña Patrimonio.
   var saldos = [];
@@ -80,7 +85,7 @@
     var mesSaldo = C.moverMes(mesActual, i - 6);
     var finDeMes = C.sumarDias(C.moverMes(mesSaldo, 1) + "-01", -1);
     [["myinvestor", 1200000 + 35000 * i], ["traderepublic", 500000 + 8000 * i], ["myaxa", 300000 + 5000 * i],
-      ["xavi", 250000 - 3000 * i], ["comun", 70000 + 1000 * i]].forEach(function (s) {
+      ["xavi", 250000 - 3000 * i], ["comun", 70000 + 1000 * i], ["piso", 18000000], ["coche", 1500000]].forEach(function (s) {
       saldos.push({ cuenta_id: s[0], fecha: finDeMes, saldo_cent: s[1] });
     });
   }

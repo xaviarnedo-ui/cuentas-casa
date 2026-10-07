@@ -10,7 +10,7 @@ create table cuentas (
   id text primary key,
   nombre text not null,
   banco text not null,
-  tipo text not null check (tipo in ('corriente', 'ahorro', 'inversion', 'efectivo', 'deuda')),
+  tipo text not null check (tipo in ('corriente', 'ahorro', 'inversion', 'efectivo', 'deuda', 'inmueble', 'vehiculo')),
   owner uuid references auth.users,          -- null = compartida
   iban_final text,                           -- últimos 4 dígitos, para reconocer el extracto
   orden int not null default 0

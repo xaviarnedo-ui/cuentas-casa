@@ -57,6 +57,16 @@ Cuando Xavi devuelva dinero: el pago (CaixaBank o efectivo) va a `transferencias
 en `deuda-padres` un movimiento manual de +importe (comercio "Devolución a mis padres", categoría
 `transferencias`). No usar `cuentas.py saldo` para esta cuenta.
 
+### Piso, hipoteca y coche (patrimonio real)
+
+- `piso-cornella` (tipo inmueble) y `coche` (tipo vehiculo): valor de mercado ESTIMADO, registrado con
+  `cuentas.py saldo <id> <importe> --fecha AAAA-MM-DD`. Revisar una vez al año (piso: €/m² de la zona;
+  coche: precio de segunda mano). Explicar a Xavi de dónde sale cada valor.
+- `hipoteca-piso` (tipo deuda): capital pendiente inicial a 2026-09-01 + un movimiento manual por cada
+  cuota (comercio "Amortización", +capital, `transferencias`) ya cargado hasta el final (fijo 1,65 %,
+  cuota 494,33 € el día 1, vence 2052-02-01). Si Xavi amortiza anticipadamente o da un capital
+  pendiente distinto, borrar las amortizaciones futuras y regenerarlas desde el dato nuevo.
+
 ## Tests
 
     python3 -m unittest discover -s tests -t .

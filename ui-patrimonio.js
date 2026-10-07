@@ -2,7 +2,9 @@
 (function () {
   "use strict";
   var C = window.Calculos;
-  var ICONOS = { inversion: "📈", ahorro: "🏦", corriente: "💳", efectivo: "💶", deuda: "💸" };
+  var ICONOS = { inversion: "📈", ahorro: "🏦", corriente: "💳", efectivo: "💶", deuda: "💸", inmueble: "🏠", vehiculo: "🚗" };
+  // Piso y coche: valor de mercado estimado, no un saldo de banco.
+  var ESTIMADO = { inmueble: true, vehiculo: true };
   // Efectivo y deudas no tienen extracto: su saldo sale de acumular sus movimientos.
   var DESDE_MOVIMIENTOS = { efectivo: true, deuda: true };
   var peticion = 0;
@@ -61,7 +63,8 @@
         '<span class="importe"></span>';
       li.querySelector(".icono").textContent = ICONOS[c.tipo] || "💳";
       li.querySelector(".nombre").textContent = c.nombre;
-      li.querySelector("small").textContent = dato ? "a " + C.fechaCorta(dato.fecha) : "Sin datos todavía";
+      li.querySelector("small").textContent = dato
+        ? (ESTIMADO[c.tipo] ? "Valor estimado a " : "a ") + C.fechaCorta(dato.fecha) : "Sin datos todavía";
       li.querySelector(".importe").textContent = dato ? C.formatoEuros(dato.saldo_cent) : "—";
       ul.appendChild(li);
     });

@@ -1,10 +1,10 @@
-var CACHE = "cuentas-v7";
+var CACHE = "cuentas-v8";
 // Esqueleto de la app. Mantener en sync con los <script>/<link> de index.html (incluido ?v=N).
 var ASSETS = [
-  "./", "./index.html", "./styles.css?v=7", "./manifest.json",
+  "./", "./index.html", "./styles.css?v=8", "./manifest.json",
   "./icons/icon-192.png", "./icons/icon-512.png",
-  "./supabase-js.min.js?v=7", "./supabase-client.js?v=7", "./calculos.js?v=7", "./datos.js?v=7",
-  "./datos-demo.js?v=7", "./tickets.js?v=7", "./ui-mes.js?v=7", "./ui-movs.js?v=7", "./ui-nuevo.js?v=7", "./ui-piso.js?v=7", "./ui-patrimonio.js?v=7", "./app.js?v=7"
+  "./supabase-js.min.js?v=8", "./supabase-client.js?v=8", "./calculos.js?v=8", "./datos.js?v=8",
+  "./datos-demo.js?v=8", "./tickets.js?v=8", "./ui-mes.js?v=8", "./ui-movs.js?v=8", "./ui-nuevo.js?v=8", "./ui-piso.js?v=8", "./ui-patrimonio.js?v=8", "./app.js?v=8"
 ];
 
 self.addEventListener("install", function (e) {
