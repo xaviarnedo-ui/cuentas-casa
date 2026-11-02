@@ -19,7 +19,8 @@ from importador.categorizar import (DIAS_BIZUM_AGUA, gasto_por_mes, posibles_dup
                                     preparar_importacion, sumar_dias)
 from importador.modelo import FormatoError, euros
 
-LECTORES = [(revolut.es_extracto_revolut, revolut.parsear)]
+LECTORES = [(revolut.es_extracto_revolut, revolut.parsear),
+            (caixabank.es_pdf_caixabank, caixabank.parsear_pdf)]
 
 RE_IMPORTE_ES = re.compile(r"^(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?$")   # 12.340 / 12.340,5 / 12340,50
 RE_IMPORTE_PUNTO = re.compile(r"^(\d+)\.(\d{1,2})$")                      # 12340.5
@@ -88,6 +89,8 @@ def leer_extracto(ruta):
             texto = datos.decode("latin-1")
         if caixabank.es_csv_caixabank(texto):
             return caixabank.parsear(texto)
+        if revolut.es_csv_revolut(texto):
+            return revolut.parsear_csv(texto)
         raise FormatoError("No reconozco el formato del CSV " + ruta)
     paginas = paginas_pdf(ruta)
     parsear = next((p for detecta, p in LECTORES if detecta(paginas)), None)

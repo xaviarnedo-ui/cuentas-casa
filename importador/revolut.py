@@ -116,3 +116,51 @@ def parsear(paginas):
     if (salidas, entradas) != (saliente, entrante):
         raise FormatoError("Los totales de entradas/salidas no coinciden con el resumen.")
     return Extracto("revolut", iban, inicial, final, movimientos)
+
+
+# --- CSV exportado desde la app de Revolut (sin IBAN: va a la única cuenta de Revolut).
+
+import csv
+import io
+
+CABECERA_CSV = ["Tipo", "Producto", "Fecha de inicio", "Fecha de finalización", "Descripción",
+                "Importe", "Comisión", "Divisa", "State", "Saldo"]
+RE_IMPORTE_CSV = re.compile(r"^(-?)(\d+)\.(\d{2})$")
+
+
+def es_csv_revolut(texto):
+    return texto.lstrip("﻿").split("\n", 1)[0].strip().split(",") == CABECERA_CSV
+
+
+def _cent_csv(texto):
+    m = RE_IMPORTE_CSV.match(texto.strip())
+    if not m:
+        raise FormatoError("Importe con formato desconocido: " + texto)
+    valor = int(m.group(2)) * 100 + int(m.group(3))
+    return -valor if m.group(1) else valor
+
+
+def parsear_csv(texto):
+    if not es_csv_revolut(texto):
+        raise FormatoError("No es un CSV de Revolut.")
+    filas = list(csv.DictReader(io.StringIO(texto.lstrip("﻿"))))
+    hechas = [f for f in filas if f["State"] == "COMPLETADO"]
+    if not hechas:
+        return Extracto("revolut", "", 0, 0, [])
+    movimientos, saldo = [], None
+    for f in hechas:
+        if f["Divisa"] != "EUR":
+            raise FormatoError("Movimiento en %s: solo sé leer la cuenta en EUR." % f["Divisa"])
+        importe = _cent_csv(f["Importe"]) - _cent_csv(f["Comisión"])
+        nuevo = _cent_csv(f["Saldo"])
+        if saldo is None:
+            saldo = inicial = nuevo - importe
+        if saldo + importe != nuevo:
+            raise FormatoError("El saldo no cuadra en '%s' del %s." % (f["Descripción"], f["Fecha de inicio"][:10]))
+        saldo = nuevo
+        titulo = " ".join(f["Descripción"].split())
+        movimientos.append(Movimiento(
+            fecha=f["Fecha de inicio"][:10], fecha_valor=(f["Fecha de finalización"] or f["Fecha de inicio"])[:10],
+            importe_cent=importe, comercio=titulo, descripcion=titulo, saldo_cent=nuevo,
+            es_transferencia=titulo.startswith(PREFIJOS_TRANSFERENCIA)))
+    return Extracto("revolut", "", inicial, saldo, movimientos)

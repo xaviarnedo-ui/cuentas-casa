@@ -58,3 +58,69 @@ def parsear(texto):
         movimientos.append(Movimiento(fecha=fecha, fecha_valor=fecha, importe_cent=importe,
                                       comercio=concepto, descripcion=concepto, saldo_cent=nuevo_saldo))
     return Extracto("caixabank", "", inicial, saldo, movimientos)
+
+
+# --- PDF "CaixaBank digital" de CaixaBankNow (Concepto / Fecha / Importe Saldo), del más reciente al más antiguo.
+
+RE_IBAN_PDF = re.compile(r"^IBAN ((?:ES|es)[\d ]{22,30})$")
+RE_IMPORTE_PDF = re.compile(r"^([+-]?)(\d{1,3}(?:\.\d{3})+|\d+),(\d{2})€$")
+RE_PAGINA = re.compile(r"^\d+/\d+$")
+
+
+def es_pdf_caixabank(paginas):
+    return bool(paginas) and any(RE_IBAN_PDF.match(l.strip()) for l in paginas[0].splitlines()[:6]) \
+        and "Concepto" in paginas[0]
+
+
+def _cent_pdf(texto):
+    m = RE_IMPORTE_PDF.match(texto)
+    if not m:
+        raise FormatoError("Importe con formato desconocido: " + texto)
+    valor = int(m.group(2).replace(".", "")) * 100 + int(m.group(3))
+    return -valor if m.group(1) == "-" else valor
+
+
+def parsear_pdf(paginas):
+    lineas = [l.strip() for p in paginas for l in p.splitlines() if l.strip()]
+    iban = next((RE_IBAN_PDF.match(l).group(1).replace(" ", "").upper() for l in lineas if RE_IBAN_PDF.match(l)), None)
+    if iban is None:
+        raise FormatoError("No encuentro el IBAN en el PDF de CaixaBank.")
+    try:
+        inicio = lineas.index("Importe Saldo") + 1
+    except ValueError:
+        raise FormatoError("No encuentro la tabla de movimientos (cabecera 'Importe Saldo').")
+    filas, concepto, i = [], [], inicio
+    cuerpo = [l for l in lineas[inicio:] if not RE_PAGINA.match(l)]
+    while i - inicio < len(cuerpo):
+        l = cuerpo[i - inicio]
+        i += 1
+        if not RE_FECHA.match(l):
+            concepto.append(l)
+            continue
+        if not concepto:
+            raise FormatoError("Fecha sin concepto: " + l)
+        importes = []
+        while len(importes) < 2 and i - inicio < len(cuerpo):
+            trozos = cuerpo[i - inicio].split()
+            if not all(RE_IMPORTE_PDF.match(t) for t in trozos) or len(importes) + len(trozos) > 2:
+                break
+            importes += trozos
+            i += 1
+        if len(importes) != 2:
+            raise FormatoError("Movimiento sin importe y saldo: " + " ".join(concepto))
+        filas.append((" ".join(" ".join(concepto).split()), _fecha(l), _cent_pdf(importes[0]), _cent_pdf(importes[1])))
+        concepto = []
+    if concepto:
+        raise FormatoError("Texto suelto al final de la tabla: " + " ".join(concepto))
+    filas.reverse()
+    if not filas:
+        return Extracto("caixabank", iban, 0, 0, [])
+    inicial = filas[0][3] - filas[0][2]
+    movimientos, saldo = [], inicial
+    for concepto, fecha, importe, nuevo_saldo in filas:
+        if saldo + importe != nuevo_saldo:
+            raise FormatoError("El saldo no cuadra en '%s' del %s." % (concepto, fecha))
+        saldo = nuevo_saldo
+        movimientos.append(Movimiento(fecha=fecha, fecha_valor=fecha, importe_cent=importe,
+                                      comercio=concepto, descripcion=concepto, saldo_cent=nuevo_saldo))
+    return Extracto("caixabank", iban, inicial, saldo, movimientos)

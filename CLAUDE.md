@@ -35,9 +35,11 @@ Andrea no lleva su cuenta personal en la app (solo la común): no hay lector de 
   extracto. Adapta el lector en `importador/` con un test nuevo.
 - Nunca commitear extractos (`.pdf/.xlsx/.csv`) ni `.env`. La clave de servicio solo vive en `.env`.
 
-### CaixaBank (CSV de CaixaBankNow)
+### CaixaBank (CSV o PDF de CaixaBankNow)
 
-- Xavi descarga el **CSV** (Cuentas → Movimientos → exportar). No trae IBAN: va a la cuenta `caixabank`.
+- Vale el **CSV** (Cuentas → Movimientos → exportar; sin IBAN, va a la cuenta `caixabank`) o el **PDF**
+  "CaixaBank digital" (trae IBAN). Revolut también llega en **CSV** exportado de la app (sin IBAN, va a
+  `comun`; solo cuenta las filas COMPLETADO).
 - Las reglas de CaixaBank son de Xavi: `python3 cuentas.py regla "<patrón>" <categoria> --cuenta caixabank`.
   Cuidado con patrones cortos que puedan estar dentro de otros conceptos (las reglas buscan "contiene").
 - "BIZUM RECIBIDO/ENVIADO", "TRANSFER INMEDIATA" y "PAGO TRANSFERENCIAS" no dicen quién es: el script
