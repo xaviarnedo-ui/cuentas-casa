@@ -29,6 +29,7 @@ CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", 
 PLANTILLA = Path(__file__).parent / "informe" / "plantilla.html"
 PLANTILLA_DETALLE = Path(__file__).parent / "informe" / "detalle.html"
 CARPETA_PDF = Path.home() / "Desktop" / "Finanzas"
+ETIQUETAS = Path(__file__).parent / "informe" / "etiquetas.json"  # local: patrón → texto (lleva nombres)
 CACHE_FUENTES = Path(__file__).parent / "informe" / ".fuentes.css"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 TIPOS = {"corriente": "Cuenta corriente", "efectivo": "En mano", "ahorro": "Ahorro", "inversion": "Inversión"}
@@ -111,6 +112,59 @@ def euros(c):
     return cuentas.euros(c)
 
 
+def etiquetas():
+    return json.loads(ETIQUETAS.read_text(encoding="utf-8")) if ETIQUETAS.exists() else {}
+
+
+def etiqueta(m, tabla):
+    texto = " ".join((m.get("nota") or m["comercio"]).lower().split()) + " | " + m["comercio"].lower()
+    for patron in sorted(tabla, key=len, reverse=True):
+        if patron in texto:
+            return tabla[patron]
+    return None
+
+
+def concepto_flujo(m, cats, tabla):
+    """Línea del cuadre de una cuenta a la que va cada movimiento."""
+    c = cats.get(m["categoria_id"])
+    if m["no_es_gasto"]:
+        return nombre(m)
+    if m["categoria_id"] == "ingresos":
+        return "Nómina e ingresos"
+    if c and c["grupo"] == "piso":
+        return "Alquiler del piso" if m["categoria_id"] == "piso-alquiler" else "Piso de Cornellà (gastos y lo que devuelve la inquilina)"
+    if m["categoria_id"] == "ahorro-inversion":
+        return "Ahorro e inversión"
+    if m["categoria_id"] == "transferencias":
+        return etiqueta(m, tabla) or ("Traspasos y Bizum entre vosotros" if es_generico(m["comercio"]) else nombre(m))
+    if m["importe_cent"] > 0:
+        persona = etiqueta(m, tabla)
+        return "Devoluciones y repartos" + (" (%s)" % persona.replace("Aportación de ", "") if persona and persona.startswith("Aportación de ") else "")
+    return "Gastos"
+
+
+def flujo(movs, cats, tabla, inicial, final):
+    """Cuadre de una cuenta en el mes: saldo inicial + líneas = saldo final (el desfase es lo cobrado en otro mes)."""
+    lineas = collections.OrderedDict()
+    for m in movs:
+        k = concepto_flujo(m, cats, tabla)
+        lineas[k] = lineas.get(k, 0) + m["importe_cent"]
+    filas = [[k, v] for k, v in lineas.items() if v]
+    filas.sort(key=lambda f: (f[1] < 0, -abs(f[1])))
+    desfase = final - inicial - sum(v for _, v in filas)
+    if desfase:
+        filas.append(["Desfase por fecha de cargo (compras que el banco cobra otro mes)", desfase])
+    return {"inicial": inicial, "final": final, "filas": filas}
+
+
+def gasto_por_categoria(movs, cats):
+    tot = collections.Counter()
+    for m in movs:
+        if es_gasto(m, cats):
+            tot[m["categoria_id"]] -= m["importe_cent"]
+    return sorted(([k, v] for k, v in tot.items() if v), key=lambda f: -f[1])
+
+
 def datos(api, mes):
     cats = {c["id"]: c for c in api.leer("categorias", select="*")}
     todas = api.leer("cuentas", select="*", order="orden")
@@ -156,6 +210,8 @@ def datos(api, mes):
                           fecha="lte.%s" % fin)
     p = patrimonio(propias, fin, saldos, movs_saldo)
     p_ant = patrimonio(propias, ultimo_dia(ant), saldos, movs_saldo)
+    if not any(c["tipo"] in ("ahorro", "inversion") for c, _ in p_ant["filas"]):
+        p_ant = {"filas": [], "total": None}  # primer mes con datos: no hay con qué comparar
     comun = saldo_a({"id": "comun", "tipo": "corriente"}, fin, saldos, [])
     resumen = []
     for c, v in p["filas"]:
@@ -168,6 +224,39 @@ def datos(api, mes):
     detalle = sorted(([c["nombre"], TIPOS[c["tipo"]], v] for c, v in p["filas"] if c["tipo"] in TIPOS), key=lambda f: -f[2])
 
     fin_txt = "%d de %s de %s" % (int(fin[8:]), nombre_mes(mes), mes[:4])
+    tabla = etiquetas()
+    fin_ant = ultimo_dia(ant)
+    cuentas_flujo = []
+    for cid, titulo in (("comun", "Cuenta común"), ("caixabank", "Tu cuenta corriente (CaixaBank)"), ("efectivo", "Tu efectivo")):
+        c = next((x for x in todas if x["id"] == cid), None)
+        if not c:
+            continue
+        movs_c = [m for m in del_mes if m["cuenta_id"] == cid]
+        if cid == "efectivo":
+            ini, fin_c = saldo_a(c, fin_ant, saldos, movs_saldo), saldo_a(c, fin, saldos, movs_saldo)
+        else:
+            ini, fin_c = saldo_a(c, fin_ant, saldos, []), saldo_a(c, fin, saldos, [])
+        if ini is None:
+            ini = (fin_c or 0) - sum(m["importe_cent"] for m in movs_c)
+        f = flujo(movs_c, cats, tabla, ini, fin_c if fin_c is not None else ini + sum(m["importe_cent"] for m in movs_c))
+        f.update(id=cid, titulo=titulo, cats=gasto_por_categoria(movs_c, cats))
+        cuentas_flujo.append(f)
+
+    variacion = []
+    if p_ant["filas"]:
+        antes = {c["id"]: v for c, v in p_ant["filas"]}
+        ahora = {c["id"]: v for c, v in p["filas"]}
+        delta = lambda ids: sum(ahora.get(i, 0) - antes.get(i, 0) for i in ids)
+        por_tipo = lambda tipos: [c["id"] for c in propias if c["tipo"] in tipos]
+        aportado = -sum(m["importe_cent"] for m in del_mes if m["categoria_id"] == "ahorro-inversion")
+        inv = delta(por_tipo(("ahorro", "inversion")))
+        variacion = [["Cuenta corriente y efectivo", delta(por_tipo(("corriente", "efectivo")))],
+                     ["Aportado a ahorro e inversión", aportado],
+                     ["Lo que han ganado (o perdido) tus inversiones", inv - aportado],
+                     ["Hipoteca amortizada", delta([c["id"] for c in propias if c["id"].startswith("hipoteca")])],
+                     ["Deudas", delta([c["id"] for c in propias if c["tipo"] == "deuda" and not c["id"].startswith("hipoteca")])],
+                     ["Revalorización estimada de piso y coche", delta(por_tipo(("inmueble", "vehiculo")))]]
+        variacion = [v for v in variacion if v[1]]
     pie = ["Datos del 1 al %s: movimientos de la cuenta común y de CaixaBank, apuntes de efectivo, saldos de fin de mes "
            "y valores estimados del piso y el coche (se revisan cada 6 meses)." % fin_txt]
     for m in del_mes:
@@ -186,7 +275,8 @@ def datos(api, mes):
                   "filas": resumen, "cuentas": detalle, "comun": comun,
                   "nota": "Piso y coche a valor de mercado estimado; hipoteca según su calendario de amortización. "
                           "Saldos de MyInvestor, MyAXA y Trade Republic a fin de mes; el efectivo es el que consta en la app."},
-        "pie": pie,
+        "pie": pie, "cuentas": cuentas_flujo, "variacion": variacion,
+        "fecha_ini": "%d de %s" % (int(fin_ant[8:]), nombre_mes(ant)), "fecha_fin": "%d de %s" % (int(fin[8:]), nombre_mes(mes)),
     }
 
 

@@ -8,3 +8,4 @@ extractos/
 *.pdf
 .claude/
 informe/.fuentes.css
+informe/etiquetas.json

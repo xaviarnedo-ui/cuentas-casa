@@ -109,12 +109,32 @@ footer p { margin: 0; }
   .cta-barra { grid-column: 1 / -1; grid-row: 2; }
   .td-cat { display: none; }
 }
+.bloque-cuenta { display: grid; gap: 18px; }
+.cab-cuenta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 20px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+.cab-cuenta h2 { font-size: 26px; }
+.cab-cuenta .eyebrow { color: var(--ink-2); }
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px 24px; }
+.cifra { display: grid; gap: 2px; }
+.cifra span { color: var(--ink-2); font-size: 13px; }
+.cifra b { font: 700 24px/1.15 var(--display); letter-spacing: -.01em; }
+.dos-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px 32px; align-items: start; }
+.dos-col > div { min-width: 0; display: grid; gap: 10px; }
+.mini-h { font: 600 13px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
+.cuadre { display: grid; gap: 0; font-size: 14px; }
+.cuadre div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.cuadre div span:last-child { white-space: nowrap; }
+.cuadre .saldo { font-weight: 600; }
+.cuadre .saldo.final { border-bottom: 2px solid var(--ink); border-top: 2px solid var(--ink); }
+.cuadre .mas span:last-child { color: var(--good); }
+.cuadre small { color: var(--ink-3); }
+.cats.una .cat { grid-template-columns: minmax(110px, 150px) 1fr 88px; }
 @page { size: A4; margin: 14mm 12mm; }
 @media print {
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .page { padding-block: 0; gap: 30px; max-width: none; padding-inline: 0; }
   .solo-pantalla, .tip { display: none !important; }
-  .junto, .cat, tr, .tarjeta, header, .grafico, footer { break-inside: avoid; }
+  .junto, .cat, tr, .tarjeta, header, .grafico, footer, .cuadre, .cifras { break-inside: avoid; }
+  .salto { break-before: page; }
   section > div:first-child { break-after: avoid; }
 }
 </style>
@@ -128,19 +148,54 @@ footer p { margin: 0; }
     <div class="split-leyenda" id="split-leyenda"></div>
   </header>
 
-  <section aria-labelledby="t-cat">
-    <div>
-      <h2 id="t-cat">En qué se fue</h2>
-      <p class="sub">Gasto por categoría. Las devoluciones ya están restadas; transferencias entre vosotros, ahorro y el piso alquilado no cuentan como gasto.</p>
+  <section class="bloque-cuenta" id="b-comun" aria-labelledby="t-comun">
+    <div class="cab-cuenta"><h2 id="t-comun">1 · La cuenta común</h2><span class="eyebrow">Revolut · de los dos</span></div>
+    <div class="cifras num" id="comun-cifras"></div>
+    <div class="dos-col">
+      <div><h3 class="mini-h">Cómo ha ido el saldo</h3><div class="cuadre num" id="comun-cuadre"></div></div>
+      <div><h3 class="mini-h">En qué gastó la común</h3><div class="cats una" id="comun-cats"></div></div>
     </div>
-    <div class="leyenda"><span><i style="background:var(--comun)"></i>Común (Revolut)</span><span><i style="background:var(--mia)"></i>Tuyo (CaixaBank y efectivo)</span></div>
-    <div class="cats" id="cats"></div>
   </section>
 
-  <section class="junto" aria-labelledby="t-ritmo">
+  <section class="bloque-cuenta salto" id="b-tuyo" aria-labelledby="t-tuyo">
+    <div class="cab-cuenta"><h2 id="t-tuyo">2 · Tu dinero</h2><span class="eyebrow">CaixaBank y efectivo · solo tuyo</span></div>
+    <div class="cifras num" id="tuyo-cifras"></div>
+    <div class="dos-col">
+      <div><h3 class="mini-h">Cuenta corriente (CaixaBank)</h3><div class="cuadre num" id="caixa-cuadre"></div></div>
+      <div><h3 class="mini-h">Efectivo</h3><div class="cuadre num" id="efectivo-cuadre"></div></div>
+    </div>
+    <div><h3 class="mini-h" style="margin-bottom:10px">En qué gastaste tú (tarjeta, Bizum y efectivo)</h3><div class="cats una" id="tuyo-cats"></div></div>
+    <div class="dos">
+      <section class="tarjeta" aria-labelledby="t-piso">
+        <div><div class="eyebrow">Piso de Cornellà</div><h2 id="t-piso">Lo que dejó el piso</h2></div>
+        <div class="grande num" id="piso-total"></div>
+        <div class="filas num" id="piso-filas"></div>
+        <p class="nota" id="piso-nota"></p>
+      </section>
+      <section class="tarjeta" aria-labelledby="t-ahorro">
+        <div><div class="eyebrow">Fuera del gasto</div><h2 id="t-ahorro">Lo que apartaste</h2></div>
+        <div class="grande num" id="ahorro-total"></div>
+        <div class="filas num" id="ahorro-filas"></div>
+        <p class="nota">Aportaciones del mes. Cuentan como ahorro, no como gasto.</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="bloque-cuenta salto" aria-labelledby="t-patri">
+    <div class="cab-cuenta"><h2 id="t-patri">3 · Tu patrimonio</h2><span class="eyebrow" id="patri-fecha"></span></div>
+    <div class="cifras num" id="patri-cifras"></div>
+    <div class="dos-col">
+      <div><h3 class="mini-h">Lo que tienes y lo que debes</h3><div class="cuadre num" id="patri-cuadre"></div></div>
+      <div id="patri-var-caja"><h3 class="mini-h">Por qué ha cambiado este mes</h3><div class="cuadre num" id="patri-var"></div></div>
+    </div>
+    <div><h3 class="mini-h" style="margin-bottom:10px">Detalle de tus cuentas</h3><div class="cuentas" id="patri-cuentas"></div></div>
+    <p class="nota" id="patri-nota"></p>
+  </section>
+
+  <section class="junto salto" aria-labelledby="t-ritmo">
     <div>
       <h2 id="t-ritmo">Ritmo del mes</h2>
-      <p class="sub">Gasto acumulado día a día.<span class="solo-pantalla"> Pasa el dedo o el ratón por encima para ver qué se pagó cada día.</span></p>
+      <p class="sub">Gasto acumulado día a día, la común y lo tuyo juntos.<span class="solo-pantalla"> Pasa el dedo o el ratón por encima para ver qué se pagó cada día.</span></p>
     </div>
     <div class="grafico" id="ritmo"></div>
   </section>
@@ -148,7 +203,7 @@ footer p { margin: 0; }
   <section aria-labelledby="t-com">
     <div>
       <h2 id="t-com">Dónde más</h2>
-      <p class="sub">Los diez comercios con más gasto en el mes.</p>
+      <p class="sub">Los diez comercios con más gasto en el mes. El color indica si lo pagó la común o tú.</p>
     </div>
     <div class="tabla-wrap">
       <table>
@@ -156,44 +211,6 @@ footer p { margin: 0; }
         <tbody id="comercios"></tbody>
       </table>
     </div>
-  </section>
-
-  <div class="dos">
-    <section class="tarjeta" aria-labelledby="t-piso">
-      <div>
-        <div class="eyebrow">Piso de Cornellà</div>
-        <h2 id="t-piso">Lo que dejó el piso</h2>
-      </div>
-      <div class="grande num" id="piso-total"></div>
-      <div class="filas num" id="piso-filas"></div>
-      <p class="nota" id="piso-nota"></p>
-    </section>
-
-    <section class="tarjeta" aria-labelledby="t-ahorro">
-      <div>
-        <div class="eyebrow">Fuera del gasto</div>
-        <h2 id="t-ahorro">Lo que apartaste</h2>
-      </div>
-      <div class="grande num" id="ahorro-total"></div>
-      <div class="filas num" id="ahorro-filas"></div>
-      <p class="nota">Aportaciones del mes. Cuentan como ahorro, no como gasto.</p>
-    </section>
-  </div>
-
-  <section class="junto" aria-labelledby="t-patri">
-    <div>
-      <div class="eyebrow" id="patri-fecha"></div>
-      <h2 id="t-patri">Tu patrimonio real</h2>
-    </div>
-    <div class="patri-cab">
-      <div class="patri-total num" id="patri-total"></div>
-      <div class="grupos num" id="patri-grupos"></div>
-    </div>
-    <div class="cuentas" id="patri-balance"></div>
-    <div class="aparte num" id="patri-filas"></div>
-    <h3 class="sub-h">Detalle de tus cuentas</h3>
-    <div class="cuentas" id="patri-cuentas"></div>
-    <p class="nota" id="patri-nota"></p>
   </section>
 
   <footer id="pie"></footer>
@@ -215,15 +232,27 @@ footer p { margin: 0; }
     var d = el("div", clase || null), v = el("span", claseValor || null, valor);
     d.appendChild(el("span", null, texto)); d.appendChild(v); lista.appendChild(d);
   }
+  function cifras(caja, lista) {
+    lista.forEach(function (c) {
+      var d = el("div", "cifra"); d.appendChild(el("span", null, c[0])); d.appendChild(el("b", c[2] || null, c[1])); caja.appendChild(d);
+    });
+  }
   function linea(a, b) { return "<div class='linea'><span>" + esc(a) + "</span><span>" + esc(b) + "</span></div>"; }
-
-  // Cabecera
-  $("eyebrow").textContent = "Cuentas de casa · " + D.mes.nombre + " " + D.mes.anio;
+  var cuenta = {}; D.cuentas.forEach(function (c) { cuenta[c.id] = c; });
+  function cuadre(caja, c) {
+    if (!c) { caja.appendChild(el("p", "nota", "Sin datos este mes.")); return; }
+    fila(caja, "Saldo a " + D.fecha_ini, eur(c.inicial), "saldo");
+    c.filas.forEach(function (f) { fila(caja, f[0], eur(f[1], true), f[1] > 0 ? "mas" : null); });
+    fila(caja, "Saldo a " + D.fecha_fin, eur(c.final), "saldo final");
+  }
   var tot = { comun: 0, mia: 0 };
   D.movs.forEach(function (m) { tot[m.q] += m.e; });
   var total = tot.comun + tot.mia;
+
+  // Cabecera
+  $("eyebrow").textContent = "Cuentas de casa · " + D.mes.nombre + " " + D.mes.anio;
   $("total").textContent = eur(total).replace(" €", "");
-  $("total").appendChild(el("small", null, "€ gastados"));
+  $("total").appendChild(el("small", null, "€ gastados entre la común y tú"));
   if (D.anterior && D.anterior.total > 0) {
     var dif = total - D.anterior.total;
     $("comparado").textContent = (dif >= 0 ? "+" : "−") + eur(Math.abs(dif)) + " (" + (dif >= 0 ? "+" : "−") +
@@ -232,10 +261,10 @@ footer p { margin: 0; }
   ["comun", "mia"].forEach(function (q) {
     var s = el("span"); s.style.flex = String(Math.max(tot[q], 0)); s.style.background = C[q]; $("split").appendChild(s);
   });
-  [["comun", "Común", "pagado desde Revolut"], ["mia", "Tuyo", "CaixaBank y efectivo"]].forEach(function (r) {
+  [["comun", "Gasto de la común"], ["mia", "Tu gasto"]].forEach(function (r) {
     var d = el("div", "clave num"), i = el("i"); i.style.background = C[r[0]];
     d.appendChild(i); d.appendChild(el("b", null, eur(tot[r[0]]) + " · " + Math.round(tot[r[0]] / total * 100) + " %"));
-    d.appendChild(el("span", null, r[1] + ", " + r[2])); $("split-leyenda").appendChild(d);
+    d.appendChild(el("span", null, r[1])); $("split-leyenda").appendChild(d);
   });
 
   // Tooltip
@@ -248,41 +277,89 @@ footer p { margin: 0; }
   }
   function ocultar() { tip.hidden = true; }
 
-  // Categorías
-  var porCat = {};
-  D.movs.forEach(function (m) {
-    var k = porCat[m.c] || (porCat[m.c] = { comun: 0, mia: 0, pos: { comun: 0, mia: 0 }, movs: [] });
-    k[m.q] += m.e; if (m.e > 0) k.pos[m.q] += m.e; k.movs.push(m);
-  });
-  var filas = Object.keys(porCat).map(function (k) { var v = porCat[k]; return { id: k, v: v, neto: v.comun + v.mia }; })
-    .filter(function (f) { return f.neto !== 0; })
-    .sort(function (a, b) { return b.neto - a.neto; });
-  var max = Math.max.apply(null, filas.map(function (f) { return f.v.pos.comun + f.v.pos.mia; }).concat([1]));
-  filas.forEach(function (f) {
-    var info = D.cats[f.id] || { nombre: "Sin categoría", icono: "" };
-    var div = el("div", "cat"); div.tabIndex = 0;
-    div.appendChild(el("div", "cat-nom", info.icono + " " + info.nombre));
-    var barra = el("div", "cat-barra");
-    ["comun", "mia"].forEach(function (q) {
-      if (f.v.pos[q] <= 0) return;
-      var s = el("span"); s.style.width = (f.v.pos[q] / max * 100) + "%"; s.style.background = C[q]; barra.appendChild(s);
+  // Barras de categoría de un lado (común o tuyo)
+  function categorias(caja, q) {
+    var porCat = {};
+    D.movs.forEach(function (m) {
+      if (m.q !== q) return;
+      var k = porCat[m.c] || (porCat[m.c] = { neto: 0, bruto: 0, movs: [] });
+      k.neto += m.e; if (m.e > 0) k.bruto += m.e; k.movs.push(m);
     });
-    div.appendChild(barra);
-    var val = el("div", "cat-val num", eur(f.neto));
-    var devuelto = (f.v.pos.comun + f.v.pos.mia) - f.neto;
-    if (devuelto > 0) val.appendChild(el("em", null, "−" + eur(devuelto).replace(" €", "") + " devuelto"));
-    div.appendChild(val);
-    var agr = {}; f.v.movs.forEach(function (m) { agr[m.n] = (agr[m.n] || 0) + m.e; });
-    var nombres = Object.keys(agr).sort(function (a, b) { return agr[b] - agr[a]; }).slice(0, 6);
-    var html = "<b>" + esc(info.nombre + " · " + eur(f.neto)) + "</b>" +
-      (f.v.comun ? linea("Común", eur(f.v.comun)) : "") + (f.v.mia ? linea("Tuyo", eur(f.v.mia)) : "") + "<hr>" +
-      nombres.map(function (n) { return linea(n, eur(agr[n])); }).join("");
-    div.addEventListener("pointermove", function (ev) { mostrar(html, ev.clientX, ev.clientY); });
-    div.addEventListener("pointerleave", ocultar);
-    div.addEventListener("focus", function () { var r = div.getBoundingClientRect(); mostrar(html, r.left + r.width / 2, r.top); });
-    div.addEventListener("blur", ocultar);
-    $("cats").appendChild(div);
+    var filas = Object.keys(porCat).map(function (k) { return { id: k, v: porCat[k] }; })
+      .filter(function (f) { return f.v.neto !== 0; }).sort(function (a, b) { return b.v.neto - a.v.neto; });
+    var max = Math.max.apply(null, filas.map(function (f) { return f.v.bruto; }).concat([1]));
+    filas.forEach(function (f) {
+      var info = D.cats[f.id] || { nombre: "Sin categoría", icono: "" };
+      var div = el("div", "cat"); div.tabIndex = 0;
+      div.appendChild(el("div", "cat-nom", info.icono + " " + info.nombre));
+      var barra = el("div", "cat-barra"), sp = el("span");
+      sp.style.width = (Math.max(f.v.neto, 0) / max * 100) + "%"; sp.style.background = C[q]; barra.appendChild(sp);
+      div.appendChild(barra);
+      var val = el("div", "cat-val num", eur(f.v.neto));
+      if (f.v.bruto - f.v.neto > 0) val.appendChild(el("em", null, "−" + eur(f.v.bruto - f.v.neto).replace(" €", "") + " devuelto"));
+      div.appendChild(val);
+      var agr = {}; f.v.movs.forEach(function (m) { agr[m.n] = (agr[m.n] || 0) + m.e; });
+      var nombres = Object.keys(agr).sort(function (a, b) { return agr[b] - agr[a]; }).slice(0, 7);
+      var html = "<b>" + esc(info.nombre + " · " + eur(f.v.neto)) + "</b><hr>" + nombres.map(function (n) { return linea(n, eur(agr[n])); }).join("");
+      div.addEventListener("pointermove", function (ev) { mostrar(html, ev.clientX, ev.clientY); });
+      div.addEventListener("pointerleave", ocultar);
+      div.addEventListener("focus", function () { var r = div.getBoundingClientRect(); mostrar(html, r.left + r.width / 2, r.top); });
+      div.addEventListener("blur", ocultar);
+      caja.appendChild(div);
+    });
+  }
+
+  // 1 · Común
+  var cc = cuenta.comun;
+  var aport = cc ? cc.filas.filter(function (f) { return f[0].indexOf("Aportación de ") === 0; }) : [];
+  cifras($("comun-cifras"), [["Gasto de la común", eur(tot.comun)]].concat(
+    aport.map(function (f) { return [f[0], eur(f[1])]; }),
+    cc ? [["Saldo a " + D.fecha_fin, eur(cc.final)]] : []));
+  cuadre($("comun-cuadre"), cc);
+  categorias($("comun-cats"), "comun");
+
+  // 2 · Tú
+  var cx = cuenta.caixabank, ef = cuenta.efectivo;
+  var nomina = cx ? cx.filas.filter(function (f) { return f[0] === "Nómina e ingresos"; }).reduce(function (s, f) { return s + f[1]; }, 0) : 0;
+  cifras($("tuyo-cifras"), [["Tu gasto", eur(tot.mia)]].concat(nomina ? [["Nómina e ingresos", eur(nomina)]] : [],
+    [["Apartado (ahorro e inversión)", eur(D.ahorro.total)]],
+    cx ? [["CaixaBank a " + D.fecha_fin, eur(cx.final), cx.final < cx.inicial ? "neg" : "pos"]] : [],
+    ef ? [["Efectivo a " + D.fecha_fin, eur(ef.final)]] : []));
+  cuadre($("caixa-cuadre"), cx);
+  cuadre($("efectivo-cuadre"), ef);
+  categorias($("tuyo-cats"), "mia");
+  $("piso-total").textContent = eur(D.piso.total, true);
+  $("piso-total").classList.add(D.piso.total >= 0 ? "pos" : "neg");
+  D.piso.filas.forEach(function (f) { fila($("piso-filas"), f[0], eur(f[1], true)); });
+  fila($("piso-filas"), "Flujo de caja", eur(D.piso.total, true), "sep");
+  $("piso-nota").textContent = D.piso.nota;
+  $("ahorro-total").textContent = eur(D.ahorro.total);
+  D.ahorro.filas.forEach(function (f) { fila($("ahorro-filas"), f[0], eur(f[1])); });
+
+  // 3 · Patrimonio
+  var P = D.patri;
+  $("patri-fecha").textContent = "A " + P.fecha;
+  cifras($("patri-cifras"), [["Patrimonio real", eur(P.total)]].concat(
+    P.anterior != null ? [["Frente al mes anterior", eur(P.total - P.anterior, true), P.total >= P.anterior ? "pos" : "neg"]] : [],
+    [["Sin piso, coche ni hipoteca", eur(P.liquido)]]));
+  P.filas.forEach(function (f) { fila($("patri-cuadre"), f[0], eur(f[1], true), f[1] > 0 ? "mas" : null); });
+  fila($("patri-cuadre"), "Patrimonio real", eur(P.total), "saldo final");
+  if (P.comun != null) fila($("patri-cuadre"), "Cuenta común (de los dos, no suma)", eur(P.comun));
+  if (D.variacion.length && P.anterior != null) {
+    fila($("patri-var"), "Patrimonio a " + D.fecha_ini, eur(P.anterior), "saldo");
+    D.variacion.forEach(function (f) { fila($("patri-var"), f[0], eur(f[1], true), f[1] > 0 ? "mas" : null); });
+    fila($("patri-var"), "Patrimonio a " + D.fecha_fin, eur(P.total), "saldo final");
+  } else {
+    $("patri-var").appendChild(el("p", "nota", "Primer mes con datos: aún no hay con qué comparar."));
+  }
+  var maxC = Math.max.apply(null, P.cuentas.map(function (c) { return c[2]; }).concat([1]));
+  P.cuentas.forEach(function (c) {
+    var div = el("div", "cta"), nom = el("div", "cta-nom", c[0]), cont = el("div"), b = el("div", "cta-barra");
+    nom.appendChild(el("em", null, c[1])); b.style.width = (Math.max(c[2], 0) / maxC * 100) + "%";
+    div.appendChild(nom); cont.appendChild(b); div.appendChild(cont);
+    div.appendChild(el("div", "cta-val num", eur(c[2]))); $("patri-cuentas").appendChild(div);
   });
+  $("patri-nota").textContent = P.nota;
 
   // Ritmo: acumulado diario
   var N = D.mes.dias, dias = [], acum = 0, porDia = {};
@@ -305,9 +382,9 @@ footer p { margin: 0; }
   }
   [1, 8, 15, 22, N].forEach(function (d) { svg.appendChild(s("text", { x: X(d), y: H - 8, "text-anchor": "middle" }, d + " " + D.mes.corto)); });
   var pts = dias.map(function (p) { return X(p.d) + "," + Y(p.acum); });
-  svg.appendChild(s("path", { d: "M" + X(1) + "," + Y(0) + " L" + pts.join(" L") + " L" + X(N) + "," + Y(0) + " Z", fill: "var(--comun)", "fill-opacity": .12 }));
-  svg.appendChild(s("polyline", { points: pts.join(" "), fill: "none", stroke: "var(--comun)", "stroke-width": 2, "stroke-linejoin": "round" }));
-  svg.appendChild(s("circle", { cx: X(N), cy: Y(dias[N - 1].acum), r: 4.5, fill: "var(--comun)", stroke: "var(--bg)", "stroke-width": 2 }));
+  svg.appendChild(s("path", { d: "M" + X(1) + "," + Y(0) + " L" + pts.join(" L") + " L" + X(N) + "," + Y(0) + " Z", fill: "var(--ink-3)", "fill-opacity": .12 }));
+  svg.appendChild(s("polyline", { points: pts.join(" "), fill: "none", stroke: "var(--ink-2)", "stroke-width": 2, "stroke-linejoin": "round" }));
+  svg.appendChild(s("circle", { cx: X(N), cy: Y(dias[N - 1].acum), r: 4.5, fill: "var(--ink-2)", stroke: "var(--bg)", "stroke-width": 2 }));
   if (D.destacado) {
     var pd = dias[D.destacado.d - 1], ax = X(pd.d), ay = Y(pd.acum);
     svg.appendChild(s("line", { x1: ax, x2: ax, y1: ay - 6, y2: ay - 22, stroke: "var(--ink-3)", "stroke-width": 1 }));
@@ -315,7 +392,7 @@ footer p { margin: 0; }
     an.style.fill = "var(--ink-2)"; svg.appendChild(an);
   }
   var cruz = s("line", { y1: mt, y2: H - mb, stroke: "var(--ink-3)", "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" });
-  var punto = s("circle", { r: 4.5, fill: "var(--comun)", stroke: "var(--bg)", "stroke-width": 2, visibility: "hidden" });
+  var punto = s("circle", { r: 4.5, fill: "var(--ink-2)", stroke: "var(--bg)", "stroke-width": 2, visibility: "hidden" });
   svg.appendChild(cruz); svg.appendChild(punto);
   var hit = s("rect", { x: ml, y: mt, width: W - ml - mr, height: H - mt - mb, fill: "transparent" });
   svg.appendChild(hit);
@@ -338,7 +415,7 @@ footer p { margin: 0; }
   var com = {};
   D.movs.forEach(function (m) {
     if (m.e <= 0) return;
-    var k = com[m.n] || (com[m.n] = { n: m.n, c: m.c, q: m.q, e: 0, k: 0 }); k.e += m.e; k.k++;
+    var k = com[m.n + m.q] || (com[m.n + m.q] = { n: m.n, c: m.c, q: m.q, e: 0, k: 0 }); k.e += m.e; k.k++;
   });
   Object.keys(com).map(function (k) { return com[k]; }).sort(function (a, b) { return b.e - a.e; }).slice(0, 10).forEach(function (r) {
     var tr = el("tr"), td = el("td"), q = el("span", "q"); q.style.background = C[r.q];
@@ -348,46 +425,6 @@ footer p { margin: 0; }
     tr.appendChild(el("td", "num", eur(r.e)));
     $("comercios").appendChild(tr);
   });
-
-  // Piso y ahorro
-  $("piso-total").textContent = eur(D.piso.total, true);
-  $("piso-total").classList.add(D.piso.total >= 0 ? "pos" : "neg");
-  D.piso.filas.forEach(function (f) { fila($("piso-filas"), f[0], eur(f[1], true)); });
-  fila($("piso-filas"), "Flujo de caja", eur(D.piso.total, true), "sep");
-  $("piso-nota").textContent = D.piso.nota;
-  $("ahorro-total").textContent = eur(D.ahorro.total);
-  D.ahorro.filas.forEach(function (f) { fila($("ahorro-filas"), f[0], eur(f[1])); });
-
-  // Patrimonio
-  var P = D.patri;
-  $("patri-fecha").textContent = "A " + P.fecha;
-  $("patri-total").textContent = eur(P.total);
-  var g = $("patri-grupos");
-  [["Tienes", P.tienes], ["Debes", P.debes]].forEach(function (x) {
-    var sp = el("span", null, x[0] + " "); sp.appendChild(el("b", null, eur(x[1]))); g.appendChild(sp);
-  });
-  if (P.anterior != null) {
-    var dp = P.total - P.anterior, sp = el("span", null, "Frente al mes anterior ");
-    sp.appendChild(el("b", dp >= 0 ? "pos" : "neg", eur(dp, true))); g.appendChild(sp);
-  }
-  [["Lo que tienes", P.tienes, ""], ["Lo que debes", P.debes, " deuda"]].forEach(function (x) {
-    var div = el("div", "cta"), cont = el("div"), b = el("div", "cta-barra" + x[2]);
-    b.style.width = (Math.abs(x[1]) / Math.max(P.tienes, -P.debes, 1) * 100) + "%";
-    div.appendChild(el("div", "cta-nom", x[0])); cont.appendChild(b); div.appendChild(cont);
-    div.appendChild(el("div", "cta-val num", eur(x[1]))); $("patri-balance").appendChild(div);
-  });
-  P.filas.forEach(function (f) { fila($("patri-filas"), f[0], eur(f[1]), null, f[1] < 0 ? "neg" : null); });
-  fila($("patri-filas"), "Patrimonio real", eur(P.total), "sep");
-  fila($("patri-filas"), "Sin piso, coche ni hipoteca", eur(P.liquido));
-  if (P.comun != null) fila($("patri-filas"), "Cuenta común (de los dos, no suma en tu total)", eur(P.comun));
-  var maxC = Math.max.apply(null, P.cuentas.map(function (c) { return c[2]; }).concat([1]));
-  P.cuentas.forEach(function (c) {
-    var div = el("div", "cta"), nom = el("div", "cta-nom", c[0]), cont = el("div"), b = el("div", "cta-barra");
-    nom.appendChild(el("em", null, c[1])); b.style.width = (Math.max(c[2], 0) / maxC * 100) + "%";
-    div.appendChild(nom); cont.appendChild(b); div.appendChild(cont);
-    div.appendChild(el("div", "cta-val num", eur(c[2]))); $("patri-cuentas").appendChild(div);
-  });
-  $("patri-nota").textContent = P.nota;
 
   D.pie.forEach(function (t) { $("pie").appendChild(el("p", null, t)); });
 })();

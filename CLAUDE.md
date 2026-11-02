@@ -22,6 +22,9 @@ Spec: `docs/superpowers/specs/2026-10-04-cuentas-casa-design.md`.
      común). En la cuenta personal de Xavi, el pago correspondiente lleva también esa categoría.
      Las reglas por nombre lo mandan a `transferencias`: cambiarlo a mano en ese movimiento. Si
      un Bizum/recarga vuestro cae el mismo día que una compra en la común, pregunta a Xavi.
+     Distinto es un ADELANTO que te devuelven entero (pagas algo que es 100 % de otro, o de la común,
+     y te lo reintegran): el pago y la devolución van a `transferencias` en tus cuentas, y el gasto
+     solo cuenta donde corresponde (p. ej. en la común si es de casa).
      Si la parte va dentro de una recarga mayor (p. ej. 506 = 500 aportación + 6 compra), no se
      toca el importado: dos manuales en la común, +parte en la categoría y −parte en `transferencias`.
 
