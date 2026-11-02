@@ -70,6 +70,13 @@ en `deuda-padres` un movimiento manual de +importe (comercio "Devolución a mis 
   cuota 494,33 € el día 1, vence 2052-02-01). Si Xavi amortiza anticipadamente o da un capital
   pendiente distinto, borrar las amortizaciones futuras y regenerarlas desde el dato nuevo.
 
+### Informe mensual (PDF en ~/Desktop/Finanzas)
+
+Cuando el mes está completo (extractos importados y saldos de fin de mes registrados):
+`python3 informe.py AAAA-MM --html <scratchpad>/gastos-<mes>.html` → guarda `~/Desktop/Finanzas/<Mes> <año>.pdf`.
+Publicar la página como Artifact nuevo y revisar el PDF (fitz) antes de dar por bueno. Las fuentes se
+incrustan desde `informe/.fuentes.css` (caché local, no se sube): Chrome sin cabeceras se cuelga si las descarga.
+
 ## Tests
 
     python3 -m unittest discover -s tests -t .

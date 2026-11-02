@@ -1,0 +1,394 @@
+<title>__TITULO__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna tipo extracto, del total al detalle; tarjetas solo para Piso y Ahorro. */
+:root {
+  --bg: #f6f7f5; --surface: #ffffff; --ink: #15201d; --ink-2: #4c5753; --ink-3: #7a8480;
+  --rule: #dfe3e0; --track: #eceeeb; --comun: #008a74; --mia: #c4691a; --patri: #4a55c4;
+  --good: #1d7a3e; --bad: #b3372e;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Instrument Sans", "Helvetica Neue", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111416; --surface: #181c1e; --ink: #eef1ef; --ink-2: #b7c0bc; --ink-3: #87918d;
+    --rule: #2a3033; --track: #22282a; --comun: #2fa592; --mia: #d27a2c; --patri: #7b84e3; --good: #5cbf7c; --bad: #ec7b70;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111416; --surface: #181c1e; --ink: #eef1ef; --ink-2: #b7c0bc; --ink-3: #87918d;
+  --rule: #2a3033; --track: #22282a; --comun: #2fa592; --mia: #d27a2c; --patri: #7b84e3; --good: #5cbf7c; --bad: #ec7b70;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.page { max-width: 880px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 56px; display: grid; gap: 44px; }
+.num { font-variant-numeric: tabular-nums; }
+.eyebrow { font: 500 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h2 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.sub { color: var(--ink-2); margin: 4px 0 0; max-width: 62ch; }
+section { display: grid; gap: 16px; min-width: 0; }
+header { display: grid; gap: 18px; }
+.total { font: 700 clamp(44px, 9vw, 76px)/1 var(--display); letter-spacing: -.03em; }
+.total small { font-size: .42em; font-weight: 500; color: var(--ink-2); letter-spacing: 0; margin-left: 6px; }
+.comparado { color: var(--ink-2); font-size: 14px; margin-top: -8px; }
+.split { display: flex; height: 14px; gap: 2px; }
+.split span { border-radius: 4px; }
+.split-leyenda { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.clave { display: grid; grid-template-columns: 12px auto; column-gap: 8px; align-items: baseline; }
+.clave i { width: 12px; height: 12px; border-radius: 3px; align-self: center; }
+.clave b { font: 600 18px/1.2 var(--body); }
+.clave span { grid-column: 2; color: var(--ink-2); font-size: 13px; }
+.leyenda { display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); }
+.leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.leyenda i { width: 10px; height: 10px; border-radius: 3px; }
+.cats { display: grid; gap: 4px; }
+.cat { display: grid; grid-template-columns: minmax(118px, 168px) 1fr 92px; gap: 12px; align-items: center;
+  padding: 6px 4px; border-radius: 6px; cursor: default; }
+.cat:hover, .cat:focus-visible { background: var(--track); outline: none; }
+.cat:focus-visible { outline: 2px solid var(--comun); }
+.cat-nom { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-barra { display: flex; gap: 2px; height: 18px; min-width: 0; }
+.cat-barra span { height: 100%; }
+.cat-barra span:last-child { border-radius: 0 4px 4px 0; }
+.cat-val { text-align: right; font-weight: 600; }
+.cat-val em { display: block; font: 400 11px/1.2 var(--mono); color: var(--ink-3); font-style: normal; }
+.grafico { position: relative; min-width: 0; }
+.grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
+.grafico text { font: 11px var(--mono); fill: var(--ink-3); }
+.tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--rule);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; min-width: 170px; max-width: 260px; z-index: 2; }
+.tip b { display: block; font-weight: 600; }
+.tip .linea { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-2); }
+.tip hr { border: 0; border-top: 1px solid var(--rule); margin: 6px 0 4px; }
+.tabla-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+  padding: 0 8px 8px; border-bottom: 1px solid var(--rule); }
+td { padding: 9px 8px; border-bottom: 1px solid var(--rule); }
+td:last-child, th:last-child { text-align: right; }
+td .q { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+td.dim { color: var(--ink-2); }
+.dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.tarjeta { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.tarjeta h2 { font-size: 19px; }
+.grande { font: 700 34px/1 var(--display); letter-spacing: -.02em; }
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+.filas, .aparte { display: grid; gap: 6px; font-size: 14px; }
+.filas div, .aparte div { display: flex; justify-content: space-between; gap: 12px; }
+.filas div span:first-child, .aparte div span:first-child { color: var(--ink-2); }
+.filas div span:last-child, .aparte div span:last-child { white-space: nowrap; }
+.filas .sep, .aparte .sep { border-top: 1px solid var(--rule); padding-top: 6px; font-weight: 600; }
+.filas .sep span:first-child, .aparte .sep span:first-child { color: var(--ink); }
+.aparte { border-top: 1px solid var(--rule); padding-top: 12px; }
+.nota { font-size: 13px; color: var(--ink-3); margin: 0; }
+footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 16px; max-width: 70ch; display: grid; gap: 6px; }
+footer p { margin: 0; }
+.patri-cab { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.patri-total { font: 700 clamp(36px, 7vw, 52px)/1 var(--display); letter-spacing: -.02em; }
+.grupos { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 14px; color: var(--ink-2); }
+.grupos b { color: var(--ink); font-weight: 600; }
+.cuentas { display: grid; gap: 4px; }
+.cta { display: grid; grid-template-columns: minmax(118px, 168px) 1fr 112px; gap: 12px; align-items: center; padding: 6px 4px; }
+.cta-nom { font-weight: 500; }
+.cta-nom em { display: block; font: 400 11px/1.2 var(--mono); color: var(--ink-3); font-style: normal; letter-spacing: .04em; text-transform: uppercase; }
+.cta-barra { height: 18px; background: var(--patri); border-radius: 0 4px 4px 0; }
+.cta-barra.deuda { background: var(--bad); }
+.cta-val { text-align: right; font-weight: 600; }
+.sub-h { font: 600 15px/1.3 var(--body); margin: 8px 0 0; color: var(--ink-2); }
+@media (max-width: 520px) {
+  .cat { grid-template-columns: 1fr 86px; row-gap: 4px; }
+  .cat-barra { grid-column: 1 / -1; grid-row: 2; }
+  .cta { grid-template-columns: 1fr 104px; row-gap: 4px; }
+  .cta-barra { grid-column: 1 / -1; grid-row: 2; }
+  .td-cat { display: none; }
+}
+@page { size: A4; margin: 14mm 12mm; }
+@media print {
+  body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { padding-block: 0; gap: 30px; max-width: none; padding-inline: 0; }
+  .solo-pantalla, .tip { display: none !important; }
+  .junto, .cat, tr, .tarjeta, header, .grafico, footer { break-inside: avoid; }
+  section > div:first-child { break-after: avoid; }
+}
+</style>
+
+<main class="page">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <div class="total num" id="total"></div>
+    <div class="comparado num" id="comparado"></div>
+    <div class="split" id="split" aria-hidden="true"></div>
+    <div class="split-leyenda" id="split-leyenda"></div>
+  </header>
+
+  <section aria-labelledby="t-cat">
+    <div>
+      <h2 id="t-cat">En qué se fue</h2>
+      <p class="sub">Gasto por categoría. Las devoluciones ya están restadas; transferencias entre vosotros, ahorro y el piso alquilado no cuentan como gasto.</p>
+    </div>
+    <div class="leyenda"><span><i style="background:var(--comun)"></i>Común (Revolut)</span><span><i style="background:var(--mia)"></i>Tuyo (CaixaBank y efectivo)</span></div>
+    <div class="cats" id="cats"></div>
+  </section>
+
+  <section class="junto" aria-labelledby="t-ritmo">
+    <div>
+      <h2 id="t-ritmo">Ritmo del mes</h2>
+      <p class="sub">Gasto acumulado día a día.<span class="solo-pantalla"> Pasa el dedo o el ratón por encima para ver qué se pagó cada día.</span></p>
+    </div>
+    <div class="grafico" id="ritmo"></div>
+  </section>
+
+  <section aria-labelledby="t-com">
+    <div>
+      <h2 id="t-com">Dónde más</h2>
+      <p class="sub">Los diez comercios con más gasto en el mes.</p>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Comercio</th><th class="td-cat">Categoría</th><th>Pagos</th><th>Total</th></tr></thead>
+        <tbody id="comercios"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="dos">
+    <section class="tarjeta" aria-labelledby="t-piso">
+      <div>
+        <div class="eyebrow">Piso de Cornellà</div>
+        <h2 id="t-piso">Lo que dejó el piso</h2>
+      </div>
+      <div class="grande num" id="piso-total"></div>
+      <div class="filas num" id="piso-filas"></div>
+      <p class="nota" id="piso-nota"></p>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="t-ahorro">
+      <div>
+        <div class="eyebrow">Fuera del gasto</div>
+        <h2 id="t-ahorro">Lo que apartaste</h2>
+      </div>
+      <div class="grande num" id="ahorro-total"></div>
+      <div class="filas num" id="ahorro-filas"></div>
+      <p class="nota">Aportaciones del mes. Cuentan como ahorro, no como gasto.</p>
+    </section>
+  </div>
+
+  <section class="junto" aria-labelledby="t-patri">
+    <div>
+      <div class="eyebrow" id="patri-fecha"></div>
+      <h2 id="t-patri">Tu patrimonio real</h2>
+    </div>
+    <div class="patri-cab">
+      <div class="patri-total num" id="patri-total"></div>
+      <div class="grupos num" id="patri-grupos"></div>
+    </div>
+    <div class="cuentas" id="patri-balance"></div>
+    <div class="aparte num" id="patri-filas"></div>
+    <h3 class="sub-h">Detalle de tus cuentas</h3>
+    <div class="cuentas" id="patri-cuentas"></div>
+    <p class="nota" id="patri-nota"></p>
+  </section>
+
+  <footer id="pie"></footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var D = __DATOS__;
+  var C = { comun: "var(--comun)", mia: "var(--mia)" };
+  function $(id) { return document.getElementById(id); }
+  function eur(c, signo) {
+    var a = Math.abs(c), s = String(Math.floor(a / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "," + String(a % 100).padStart(2, "0") + " €";
+    return (c < 0 ? "−" : (signo && c > 0 ? "+" : "")) + s;
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); }
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function fila(lista, texto, valor, clase, claseValor) {
+    var d = el("div", clase || null), v = el("span", claseValor || null, valor);
+    d.appendChild(el("span", null, texto)); d.appendChild(v); lista.appendChild(d);
+  }
+  function linea(a, b) { return "<div class='linea'><span>" + esc(a) + "</span><span>" + esc(b) + "</span></div>"; }
+
+  // Cabecera
+  $("eyebrow").textContent = "Cuentas de casa · " + D.mes.nombre + " " + D.mes.anio;
+  var tot = { comun: 0, mia: 0 };
+  D.movs.forEach(function (m) { tot[m.q] += m.e; });
+  var total = tot.comun + tot.mia;
+  $("total").textContent = eur(total).replace(" €", "");
+  $("total").appendChild(el("small", null, "€ gastados"));
+  if (D.anterior && D.anterior.total > 0) {
+    var dif = total - D.anterior.total;
+    $("comparado").textContent = (dif >= 0 ? "+" : "−") + eur(Math.abs(dif)) + " (" + (dif >= 0 ? "+" : "−") +
+      Math.abs(Math.round(dif / D.anterior.total * 100)) + " %) frente a " + D.anterior.nombre + ", que fueron " + eur(D.anterior.total);
+  }
+  ["comun", "mia"].forEach(function (q) {
+    var s = el("span"); s.style.flex = String(Math.max(tot[q], 0)); s.style.background = C[q]; $("split").appendChild(s);
+  });
+  [["comun", "Común", "pagado desde Revolut"], ["mia", "Tuyo", "CaixaBank y efectivo"]].forEach(function (r) {
+    var d = el("div", "clave num"), i = el("i"); i.style.background = C[r[0]];
+    d.appendChild(i); d.appendChild(el("b", null, eur(tot[r[0]]) + " · " + Math.round(tot[r[0]] / total * 100) + " %"));
+    d.appendChild(el("span", null, r[1] + ", " + r[2])); $("split-leyenda").appendChild(d);
+  });
+
+  // Tooltip
+  var tip = el("div", "tip"); tip.hidden = true; document.body.appendChild(tip);
+  function mostrar(html, x, y) {
+    tip.innerHTML = html; tip.hidden = false;
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, x + 14)) + "px";
+    tip.style.top = Math.max(8, Math.min(window.innerHeight - h - 8, y - h - 10)) + "px";
+  }
+  function ocultar() { tip.hidden = true; }
+
+  // Categorías
+  var porCat = {};
+  D.movs.forEach(function (m) {
+    var k = porCat[m.c] || (porCat[m.c] = { comun: 0, mia: 0, pos: { comun: 0, mia: 0 }, movs: [] });
+    k[m.q] += m.e; if (m.e > 0) k.pos[m.q] += m.e; k.movs.push(m);
+  });
+  var filas = Object.keys(porCat).map(function (k) { var v = porCat[k]; return { id: k, v: v, neto: v.comun + v.mia }; })
+    .filter(function (f) { return f.neto !== 0; })
+    .sort(function (a, b) { return b.neto - a.neto; });
+  var max = Math.max.apply(null, filas.map(function (f) { return f.v.pos.comun + f.v.pos.mia; }).concat([1]));
+  filas.forEach(function (f) {
+    var info = D.cats[f.id] || { nombre: "Sin categoría", icono: "" };
+    var div = el("div", "cat"); div.tabIndex = 0;
+    div.appendChild(el("div", "cat-nom", info.icono + " " + info.nombre));
+    var barra = el("div", "cat-barra");
+    ["comun", "mia"].forEach(function (q) {
+      if (f.v.pos[q] <= 0) return;
+      var s = el("span"); s.style.width = (f.v.pos[q] / max * 100) + "%"; s.style.background = C[q]; barra.appendChild(s);
+    });
+    div.appendChild(barra);
+    var val = el("div", "cat-val num", eur(f.neto));
+    var devuelto = (f.v.pos.comun + f.v.pos.mia) - f.neto;
+    if (devuelto > 0) val.appendChild(el("em", null, "−" + eur(devuelto).replace(" €", "") + " devuelto"));
+    div.appendChild(val);
+    var agr = {}; f.v.movs.forEach(function (m) { agr[m.n] = (agr[m.n] || 0) + m.e; });
+    var nombres = Object.keys(agr).sort(function (a, b) { return agr[b] - agr[a]; }).slice(0, 6);
+    var html = "<b>" + esc(info.nombre + " · " + eur(f.neto)) + "</b>" +
+      (f.v.comun ? linea("Común", eur(f.v.comun)) : "") + (f.v.mia ? linea("Tuyo", eur(f.v.mia)) : "") + "<hr>" +
+      nombres.map(function (n) { return linea(n, eur(agr[n])); }).join("");
+    div.addEventListener("pointermove", function (ev) { mostrar(html, ev.clientX, ev.clientY); });
+    div.addEventListener("pointerleave", ocultar);
+    div.addEventListener("focus", function () { var r = div.getBoundingClientRect(); mostrar(html, r.left + r.width / 2, r.top); });
+    div.addEventListener("blur", ocultar);
+    $("cats").appendChild(div);
+  });
+
+  // Ritmo: acumulado diario
+  var N = D.mes.dias, dias = [], acum = 0, porDia = {};
+  D.movs.forEach(function (m) { (porDia[m.d] || (porDia[m.d] = [])).push(m); });
+  for (var d = 1; d <= N; d++) {
+    var del = (porDia[d] || []).reduce(function (s, m) { return s + m.e; }, 0);
+    acum += del; dias.push({ d: d, dia: del, acum: acum, movs: porDia[d] || [] });
+  }
+  var W = 840, H = 300, ml = 56, mr = 16, mt = 24, mb = 30;
+  var techo = Math.max.apply(null, dias.map(function (p) { return p.acum; }).concat([1]));
+  var paso = techo > 400000 ? 100000 : 50000, ymax = Math.ceil(techo / paso) * paso;
+  function X(d) { return ml + (d - 1) / (N - 1) * (W - ml - mr); }
+  function Y(v) { return mt + (1 - v / ymax) * (H - mt - mb); }
+  var NS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs, txt) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (txt != null) e.textContent = txt; return e; }
+  var svg = s("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Gasto acumulado de " + D.mes.nombre + ": " + eur(acum) });
+  for (var v = 0; v <= ymax; v += paso) {
+    svg.appendChild(s("line", { x1: ml, x2: W - mr, y1: Y(v), y2: Y(v), stroke: "var(--rule)", "stroke-width": 1 }));
+    svg.appendChild(s("text", { x: ml - 8, y: Y(v) + 4, "text-anchor": "end" }, (v / 100).toLocaleString("es-ES") + " €"));
+  }
+  [1, 8, 15, 22, N].forEach(function (d) { svg.appendChild(s("text", { x: X(d), y: H - 8, "text-anchor": "middle" }, d + " " + D.mes.corto)); });
+  var pts = dias.map(function (p) { return X(p.d) + "," + Y(p.acum); });
+  svg.appendChild(s("path", { d: "M" + X(1) + "," + Y(0) + " L" + pts.join(" L") + " L" + X(N) + "," + Y(0) + " Z", fill: "var(--comun)", "fill-opacity": .12 }));
+  svg.appendChild(s("polyline", { points: pts.join(" "), fill: "none", stroke: "var(--comun)", "stroke-width": 2, "stroke-linejoin": "round" }));
+  svg.appendChild(s("circle", { cx: X(N), cy: Y(dias[N - 1].acum), r: 4.5, fill: "var(--comun)", stroke: "var(--bg)", "stroke-width": 2 }));
+  if (D.destacado) {
+    var pd = dias[D.destacado.d - 1], ax = X(pd.d), ay = Y(pd.acum);
+    svg.appendChild(s("line", { x1: ax, x2: ax, y1: ay - 6, y2: ay - 22, stroke: "var(--ink-3)", "stroke-width": 1 }));
+    var an = s("text", { x: ax - 4, y: ay - 28, "text-anchor": pd.d < 8 ? "start" : "end" }, D.destacado.n + " " + eur(D.destacado.e));
+    an.style.fill = "var(--ink-2)"; svg.appendChild(an);
+  }
+  var cruz = s("line", { y1: mt, y2: H - mb, stroke: "var(--ink-3)", "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" });
+  var punto = s("circle", { r: 4.5, fill: "var(--comun)", stroke: "var(--bg)", "stroke-width": 2, visibility: "hidden" });
+  svg.appendChild(cruz); svg.appendChild(punto);
+  var hit = s("rect", { x: ml, y: mt, width: W - ml - mr, height: H - mt - mb, fill: "transparent" });
+  svg.appendChild(hit);
+  $("ritmo").appendChild(svg);
+  hit.addEventListener("pointermove", function (ev) {
+    var r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * W;
+    var d = Math.min(N, Math.max(1, Math.round((x - ml) / (W - ml - mr) * (N - 1) + 1))), p = dias[d - 1];
+    cruz.setAttribute("x1", X(d)); cruz.setAttribute("x2", X(d)); cruz.setAttribute("visibility", "visible");
+    punto.setAttribute("cx", X(d)); punto.setAttribute("cy", Y(p.acum)); punto.setAttribute("visibility", "visible");
+    var agr = {}; p.movs.forEach(function (m) { agr[m.n] = (agr[m.n] || 0) + m.e; });
+    var ns = Object.keys(agr).sort(function (a, b) { return agr[b] - agr[a]; });
+    var html = "<b>" + d + " de " + esc(D.mes.nombre) + "</b>" + linea("Ese día", eur(p.dia)) + linea("Acumulado", eur(p.acum)) +
+      (ns.length ? "<hr>" : "") + ns.slice(0, 5).map(function (n) { return linea(n, eur(agr[n])); }).join("") +
+      (ns.length > 5 ? linea("y " + (ns.length - 5) + " más", "") : "");
+    mostrar(html, ev.clientX, ev.clientY);
+  });
+  hit.addEventListener("pointerleave", function () { ocultar(); cruz.setAttribute("visibility", "hidden"); punto.setAttribute("visibility", "hidden"); });
+
+  // Comercios
+  var com = {};
+  D.movs.forEach(function (m) {
+    if (m.e <= 0) return;
+    var k = com[m.n] || (com[m.n] = { n: m.n, c: m.c, q: m.q, e: 0, k: 0 }); k.e += m.e; k.k++;
+  });
+  Object.keys(com).map(function (k) { return com[k]; }).sort(function (a, b) { return b.e - a.e; }).slice(0, 10).forEach(function (r) {
+    var tr = el("tr"), td = el("td"), q = el("span", "q"); q.style.background = C[r.q];
+    td.appendChild(q); td.appendChild(document.createTextNode(r.n)); tr.appendChild(td);
+    tr.appendChild(el("td", "dim td-cat", (D.cats[r.c] || { nombre: "" }).nombre));
+    tr.appendChild(el("td", "dim num", String(r.k)));
+    tr.appendChild(el("td", "num", eur(r.e)));
+    $("comercios").appendChild(tr);
+  });
+
+  // Piso y ahorro
+  $("piso-total").textContent = eur(D.piso.total, true);
+  $("piso-total").classList.add(D.piso.total >= 0 ? "pos" : "neg");
+  D.piso.filas.forEach(function (f) { fila($("piso-filas"), f[0], eur(f[1], true)); });
+  fila($("piso-filas"), "Flujo de caja", eur(D.piso.total, true), "sep");
+  $("piso-nota").textContent = D.piso.nota;
+  $("ahorro-total").textContent = eur(D.ahorro.total);
+  D.ahorro.filas.forEach(function (f) { fila($("ahorro-filas"), f[0], eur(f[1])); });
+
+  // Patrimonio
+  var P = D.patri;
+  $("patri-fecha").textContent = "A " + P.fecha;
+  $("patri-total").textContent = eur(P.total);
+  var g = $("patri-grupos");
+  [["Tienes", P.tienes], ["Debes", P.debes]].forEach(function (x) {
+    var sp = el("span", null, x[0] + " "); sp.appendChild(el("b", null, eur(x[1]))); g.appendChild(sp);
+  });
+  if (P.anterior != null) {
+    var dp = P.total - P.anterior, sp = el("span", null, "Frente al mes anterior ");
+    sp.appendChild(el("b", dp >= 0 ? "pos" : "neg", eur(dp, true))); g.appendChild(sp);
+  }
+  [["Lo que tienes", P.tienes, ""], ["Lo que debes", P.debes, " deuda"]].forEach(function (x) {
+    var div = el("div", "cta"), cont = el("div"), b = el("div", "cta-barra" + x[2]);
+    b.style.width = (Math.abs(x[1]) / Math.max(P.tienes, -P.debes, 1) * 100) + "%";
+    div.appendChild(el("div", "cta-nom", x[0])); cont.appendChild(b); div.appendChild(cont);
+    div.appendChild(el("div", "cta-val num", eur(x[1]))); $("patri-balance").appendChild(div);
+  });
+  P.filas.forEach(function (f) { fila($("patri-filas"), f[0], eur(f[1]), null, f[1] < 0 ? "neg" : null); });
+  fila($("patri-filas"), "Patrimonio real", eur(P.total), "sep");
+  fila($("patri-filas"), "Sin piso, coche ni hipoteca", eur(P.liquido));
+  if (P.comun != null) fila($("patri-filas"), "Cuenta común (de los dos, no suma en tu total)", eur(P.comun));
+  var maxC = Math.max.apply(null, P.cuentas.map(function (c) { return c[2]; }).concat([1]));
+  P.cuentas.forEach(function (c) {
+    var div = el("div", "cta"), nom = el("div", "cta-nom", c[0]), cont = el("div"), b = el("div", "cta-barra");
+    nom.appendChild(el("em", null, c[1])); b.style.width = (Math.max(c[2], 0) / maxC * 100) + "%";
+    div.appendChild(nom); cont.appendChild(b); div.appendChild(cont);
+    div.appendChild(el("div", "cta-val num", eur(c[2]))); $("patri-cuentas").appendChild(div);
+  });
+  $("patri-nota").textContent = P.nota;
+
+  D.pie.forEach(function (t) { $("pie").appendChild(el("p", null, t)); });
+})();
+</script>

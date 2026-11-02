@@ -7,3 +7,4 @@ extractos/
 !tests/fixtures/*
 *.pdf
 .claude/
+informe/.fuentes.css

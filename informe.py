@@ -1,0 +1,252 @@
+#!/usr/bin/env python3
+"""Informe mensual de gastos y patrimonio (HTML + PDF) a partir de la base de datos.
+
+  python3 informe.py 2026-10 [--html <ruta>] [--sin-pdf]
+
+El PDF se guarda en ~/Desktop/Finanzas/<Mes> <año>.pdf (Chrome sin cabeceras)."""
+import argparse
+import calendar
+import collections
+import base64
+import json
+import re
+import urllib.request
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+import cuentas
+from importador.api import Api
+from importador.categorizar import es_generico
+
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+         "septiembre", "octubre", "noviembre", "diciembre"]
+CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+PLANTILLA = Path(__file__).parent / "informe" / "plantilla.html"
+CARPETA_PDF = Path.home() / "Desktop" / "Finanzas"
+CACHE_FUENTES = Path(__file__).parent / "informe" / ".fuentes.css"
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+TIPOS = {"corriente": "Cuenta corriente", "efectivo": "En mano", "ahorro": "Ahorro", "inversion": "Inversión"}
+DESDE_MOVIMIENTOS = ("efectivo", "deuda")
+# Conceptos del banco poco legibles → nombre para el informe.
+NOMBRES = {"RECIBOS VARIOS": "Máster PNI", "GO FORTH RUNNERS": "Go Forth Runners", "REPSOL WAYLET": "Repsol",
+           "GRUPO PUERTAS PIZ": "Mando del parking", "SMAP ORA PALMA": "ORA Palma", "LM PALMA CIUDAD": "Leroy Merlin",
+           "SumUp *KEVINCOIF": "Peluquería", "FUND.PASQUAL MAR.": "Fund. Pasqual Maragall",
+           "ASOC.ESPANOLA CON": "Asoc. Española contra el Cáncer", "APPLE.COM/BILL": "Apple",
+           "EasyPark Espana S": "EasyPark", "Activacion": "Activación tarjeta", "PAGO TRANSFERENCIAS": "MyInvestor",
+           "AXA AURORA VIDA": "MyAXA", "Ahorro": "Hucha \"Ahorro\"", "DEPORTICKET.COM": "Deporticket",
+           "TRAINING SCHEMES": "Tribe (ropa de running)", "CAT COPLEFC": "Colegio profesional",
+           "Vueling*VILADECANS": "Vueling", "Decatlon": "Decathlon", "Ingles": "Clases de inglés",
+           "Inglés": "Clases de inglés", "Xavi": "Clases de inglés",
+           "AGENCIA TRIBUTARI": "Hacienda"}
+
+
+def mes_siguiente(mes):
+    a, m = int(mes[:4]), int(mes[5:7])
+    return "%d-%02d" % (a + m // 12, m % 12 + 1)
+
+
+def mes_anterior(mes):
+    a, m = int(mes[:4]), int(mes[5:7])
+    return "%d-%02d" % (a - (m == 1), 12 if m == 1 else m - 1)
+
+
+def nombre_mes(mes):
+    return MESES[int(mes[5:7]) - 1]
+
+
+def ultimo_dia(mes):
+    return "%s-%02d" % (mes, calendar.monthrange(int(mes[:4]), int(mes[5:7]))[1])
+
+
+def nombre(m):
+    if m.get("nota") and (es_generico(m["comercio"]) or m["comercio"].startswith(("To ", "Pago de "))):
+        return m["nota"]  # Bizum y traspasos: la nota dice qué fue
+    if es_generico(m["comercio"]):
+        if m["categoria_id"] == "formacion":
+            return "Clases de inglés"
+        if m["categoria_id"] == "ahorro-inversion" and m["comercio"] in NOMBRES:
+            return NOMBRES[m["comercio"]]
+        return m["comercio"].capitalize()
+    return NOMBRES.get(m["comercio"], m["comercio"])
+
+
+def es_gasto(m, cats):
+    if m["no_es_gasto"]:
+        return False
+    c = cats.get(m["categoria_id"])
+    return c is None or c["cuenta_como_gasto"]
+
+
+def saldo_a(cuenta, fecha, saldos, movs):
+    """Saldo de una cuenta al cierre de `fecha`: suma de movimientos (efectivo, deudas) o último saldo."""
+    if cuenta["tipo"] in DESDE_MOVIMIENTOS:
+        return sum(m["importe_cent"] for m in movs if m["cuenta_id"] == cuenta["id"] and m["fecha"] <= fecha)
+    previos = [s for s in saldos if s["cuenta_id"] == cuenta["id"] and s["fecha"] <= fecha]
+    return max(previos, key=lambda s: s["fecha"])["saldo_cent"] if previos else None
+
+
+def patrimonio(cuentas_propias, fecha, saldos, movs):
+    filas = [(c, saldo_a(c, fecha, saldos, movs)) for c in cuentas_propias]
+    filas = [(c, v) for c, v in filas if v is not None]
+    total = sum(v for _, v in filas)
+    bienes = sum(v for c, v in filas if c["tipo"] in ("inmueble", "vehiculo"))
+    hipoteca = sum(v for c, v in filas if c["id"].startswith("hipoteca"))
+    return {"filas": filas, "total": total, "liquido": total - bienes - hipoteca,
+            "tienes": sum(v for _, v in filas if v > 0), "debes": sum(v for _, v in filas if v < 0)}
+
+
+def euros(c):
+    return cuentas.euros(c)
+
+
+def datos(api, mes):
+    cats = {c["id"]: c for c in api.leer("categorias", select="*")}
+    todas = api.leer("cuentas", select="*", order="orden")
+    perfil = next(c["owner"] for c in todas if c["id"] == "caixabank")
+    propias = [c for c in todas if c["owner"] == perfil]
+    vistas = ["comun"] + [c["id"] for c in propias if c["tipo"] in ("corriente", "efectivo")]
+    fin = ultimo_dia(mes)
+    ant = mes_anterior(mes)
+    movs_mes = api.leer("movimientos", select="*", cuenta_id="in.(%s)" % ",".join(vistas),
+                        fecha="gte.%s-01" % ant, **{"and": "(fecha.lte.%s)" % fin}, order="fecha")
+    del_mes = [m for m in movs_mes if m["fecha"].startswith(mes)]
+
+    gastos = [{"d": int(m["fecha"][8:]), "c": m["categoria_id"], "q": "comun" if m["cuenta_id"] == "comun" else "mia",
+               "n": nombre(m), "e": -m["importe_cent"]} for m in del_mes if es_gasto(m, cats)]
+    total_ant = -sum(m["importe_cent"] for m in movs_mes if m["fecha"].startswith(ant) and es_gasto(m, cats))
+    total = sum(g["e"] for g in gastos)
+    mayor = max(gastos, key=lambda g: g["e"], default=None)
+    destacado = mayor if mayor and total and mayor["e"] >= total * 0.12 else None
+
+    piso = collections.Counter()
+    for m in del_mes:
+        c = cats.get(m["categoria_id"])
+        if c and c["grupo"] == "piso":
+            piso[c["nombre"].replace("Piso · ", "")] += m["importe_cent"]
+    filas_piso = sorted(((k, v) for k, v in piso.items() if v), key=lambda kv: -kv[1])
+    amortizado = 0
+    if any(c["id"] == "hipoteca-piso" for c in propias):
+        amortizado = sum(m["importe_cent"] for m in api.leer(
+            "movimientos", select="importe_cent", cuenta_id="eq.hipoteca-piso", comercio="eq.Amortización",
+            fecha="gte.%s-01" % mes, **{"and": "(fecha.lte.%s)" % fin}))
+    nota_piso = "Ingresos y gastos del piso del mes; la luz, el gas y el agua van netos de lo que devuelve la inquilina."
+    if amortizado:
+        nota_piso += " De la cuota de la hipoteca, %s fueron capital amortizado: también es patrimonio tuyo." % euros(amortizado)
+
+    ahorro = collections.Counter()
+    for m in del_mes:
+        if m["categoria_id"] == "ahorro-inversion":
+            ahorro[nombre(m)] -= m["importe_cent"]
+
+    saldos = api.leer("saldos", select="*", fecha="lte.%s" % fin)
+    movs_saldo = api.leer("movimientos", select="cuenta_id,fecha,importe_cent",
+                          cuenta_id="in.(%s)" % ",".join(c["id"] for c in propias if c["tipo"] in DESDE_MOVIMIENTOS),
+                          fecha="lte.%s" % fin)
+    p = patrimonio(propias, fin, saldos, movs_saldo)
+    p_ant = patrimonio(propias, ultimo_dia(ant), saldos, movs_saldo)
+    comun = saldo_a({"id": "comun", "tipo": "corriente"}, fin, saldos, [])
+    resumen = []
+    for c, v in p["filas"]:
+        if c["tipo"] in ("inmueble", "vehiculo"):
+            resumen.append([c["nombre"] + " (valor estimado)", v])
+    resumen.insert(1, ["Cuentas, ahorro e inversión", sum(v for c, v in p["filas"] if c["tipo"] in TIPOS)])
+    for c, v in p["filas"]:
+        if c["tipo"] == "deuda":
+            resumen.append([c["nombre"] + (" (capital pendiente)" if c["id"].startswith("hipoteca") else ""), v])
+    detalle = sorted(([c["nombre"], TIPOS[c["tipo"]], v] for c, v in p["filas"] if c["tipo"] in TIPOS), key=lambda f: -f[2])
+
+    fin_txt = "%d de %s de %s" % (int(fin[8:]), nombre_mes(mes), mes[:4])
+    pie = ["Datos del 1 al %s: movimientos de la cuenta común y de CaixaBank, apuntes de efectivo, saldos de fin de mes "
+           "y valores estimados del piso y el coche (se revisan cada 6 meses)." % fin_txt]
+    for m in del_mes:
+        if m["no_es_gasto"] and m["importe_cent"]:
+            pie.append("No cuenta como gasto: %s, %s%s." % (nombre(m), euros(abs(m["importe_cent"])),
+                                                             (" (" + m["nota"] + ")") if m.get("nota") else ""))
+    return {
+        "mes": {"nombre": nombre_mes(mes), "anio": mes[:4], "dias": int(fin[8:]), "corto": CORTOS[int(mes[5:7]) - 1]},
+        "movs": gastos, "cats": {k: {"nombre": c["nombre"], "icono": c["icono"]} for k, c in cats.items()},
+        "anterior": {"nombre": nombre_mes(ant), "total": total_ant} if total_ant > 0 else None,
+        "destacado": destacado,
+        "piso": {"filas": filas_piso, "total": sum(piso.values()), "nota": nota_piso},
+        "ahorro": {"filas": sorted(ahorro.items(), key=lambda kv: -kv[1]), "total": sum(ahorro.values())},
+        "patri": {"fecha": fin_txt, "total": p["total"], "tienes": p["tienes"], "debes": p["debes"],
+                  "liquido": p["liquido"], "anterior": p_ant["total"] if p_ant["filas"] else None,
+                  "filas": resumen, "cuentas": detalle, "comun": comun,
+                  "nota": "Piso y coche a valor de mercado estimado; hipoteca según su calendario de amortización. "
+                          "Saldos de MyInvestor, MyAXA y Trade Republic a fin de mes; el efectivo es el que consta en la app."},
+        "pie": pie,
+    }
+
+
+def html(d, mes):
+    texto = PLANTILLA.read_text(encoding="utf-8")
+    titulo = "Gastos de %s %s" % (nombre_mes(mes), mes[:4])
+    datos_js = json.dumps(d, ensure_ascii=False).replace("</", "<\\/")
+    return texto.replace("__TITULO__", titulo).replace("__DATOS__", datos_js)
+
+
+def fuentes_incrustadas(pagina):
+    """Chrome sin cabeceras se cuelga descargando Google Fonts: se incrustan como data: (con caché local)."""
+    enlace = re.search(r'<link rel="stylesheet" href="(https://fonts.googleapis.com/[^"]+)">', pagina)
+    if not enlace:
+        return pagina
+    if not CACHE_FUENTES.exists():
+        ua = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36"}
+        css = urllib.request.urlopen(urllib.request.Request(enlace.group(1).replace("&amp;", "&"), headers=ua)).read().decode()
+        def incrustar(m):
+            datos = urllib.request.urlopen(m.group(1)).read()
+            return "url(data:font/woff2;base64,%s)" % base64.b64encode(datos).decode()
+        CACHE_FUENTES.write_text(re.sub(r"url\((https://[^)]+)\)", incrustar, css), encoding="utf-8")
+    pagina = re.sub(r'<link rel="preconnect"[^>]*>\n?', "", pagina)
+    return pagina.replace(enlace.group(0), "<style>" + CACHE_FUENTES.read_text(encoding="utf-8") + "</style>")
+
+
+def pdf(pagina, destino):
+    pagina = fuentes_incrustadas(pagina)
+    with tempfile.TemporaryDirectory() as tmp:
+        fuente = Path(tmp) / "informe.html"
+        fuente.write_text('<!doctype html><html lang="es"><head><meta charset="utf-8">'
+                          '<meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'
+                          + pagina + "</body></html>", encoding="utf-8")
+        salida = Path(tmp) / "informe.pdf"
+        proc = subprocess.Popen([CHROME, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                                 "--user-data-dir=" + str(Path(tmp) / "perfil"), "--no-pdf-header-footer",
+                                 "--run-all-compositor-stages-before-draw", "--virtual-time-budget=6000",
+                                 "--print-to-pdf=" + str(salida), fuente.as_uri()],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(90):  # Chrome a veces no termina solo: basta con que el PDF esté escrito
+            if salida.exists() and salida.stat().st_size > 0:
+                time.sleep(1)
+                break
+            time.sleep(1)
+        proc.kill()
+        if not salida.exists():
+            raise SystemExit("ERROR: Chrome no generó el PDF.")
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(salida, destino)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("mes", help="AAAA-MM")
+    p.add_argument("--html", help="guarda también la página en esta ruta")
+    p.add_argument("--sin-pdf", action="store_true")
+    args = p.parse_args()
+    env = cuentas.leer_env()
+    api = Api(env["SUPABASE_URL"], env["SUPABASE_SERVICE_KEY"])
+    pagina = html(datos(api, args.mes), args.mes)
+    if args.html:
+        Path(args.html).write_text(pagina, encoding="utf-8")
+        print("Página:", args.html)
+    if not args.sin_pdf:
+        destino = CARPETA_PDF / ("%s %s.pdf" % (nombre_mes(args.mes).capitalize(), args.mes[:4]))
+        pdf(pagina, destino)
+        print("PDF:", destino)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
