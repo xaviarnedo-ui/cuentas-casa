@@ -1,0 +1,65 @@
+<title>__TITULO__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: libro de movimientos del mes, un bloque por categoría con su subtotal. */
+:root {
+  --bg: #f6f7f5; --surface: #ffffff; --ink: #15201d; --ink-2: #4c5753; --ink-3: #7a8480;
+  --rule: #dfe3e0; --comun: #008a74; --mia: #c4691a; --good: #1d7a3e; --bad: #b3372e;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Instrument Sans", "Helvetica Neue", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111416; --surface: #181c1e; --ink: #eef1ef; --ink-2: #b7c0bc; --ink-3: #87918d;
+    --rule: #2a3033; --comun: #2fa592; --mia: #d27a2c; --good: #5cbf7c; --bad: #ec7b70; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111416; --surface: #181c1e; --ink: #eef1ef; --ink-2: #b7c0bc; --ink-3: #87918d;
+  --rule: #2a3033; --comun: #2fa592; --mia: #d27a2c; --good: #5cbf7c; --bad: #ec7b70; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.45 var(--body); }
+.page { max-width: 880px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 56px; display: grid; gap: 34px; }
+.num { font-variant-numeric: tabular-nums; }
+.eyebrow { font: 500 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 6vw, 44px); letter-spacing: -.02em; }
+h2 { font-size: 22px; letter-spacing: -.01em; }
+h3 { font-size: 17px; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+h3 span { font: 600 15px var(--body); }
+.resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 24px; }
+.resumen div { display: grid; gap: 2px; }
+.resumen span { color: var(--ink-2); font-size: 13px; }
+.resumen b { font: 600 18px/1.2 var(--body); }
+section { display: grid; gap: 18px; }
+.bloque { display: grid; gap: 6px; }
+.tabla-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+  padding: 0 6px 6px; border-bottom: 1px solid var(--rule); }
+td { padding: 6px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td.f { width: 54px; color: var(--ink-2); white-space: nowrap; }
+td.c { width: 96px; color: var(--ink-2); white-space: nowrap; }
+td.c i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+td.i, th.i { text-align: right; white-space: nowrap; width: 104px; }
+td small { display: block; color: var(--ink-3); font-size: 12px; }
+.mas { color: var(--good); }
+.sub { color: var(--ink-2); margin: 0; max-width: 70ch; }
+footer { font-size: 12.5px; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 14px; }
+@page { size: A4; margin: 14mm 12mm; }
+@media print {
+  body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { padding-block: 0; max-width: none; padding-inline: 0; gap: 26px; }
+  section, .bloque { display: block; }
+  section > h2 { margin-bottom: 14px; break-after: avoid; }
+  .bloque { margin-bottom: 18px; break-inside: avoid; }
+  tr { break-inside: avoid; }
+}
+</style>
+<main class="page">
+__CUERPO__
+</main>

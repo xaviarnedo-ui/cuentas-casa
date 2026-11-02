@@ -11,6 +11,7 @@ import base64
 import json
 import re
 import urllib.request
+from html import escape
 import shutil
 import subprocess
 import sys
@@ -26,6 +27,7 @@ MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto
          "septiembre", "octubre", "noviembre", "diciembre"]
 CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 PLANTILLA = Path(__file__).parent / "informe" / "plantilla.html"
+PLANTILLA_DETALLE = Path(__file__).parent / "informe" / "detalle.html"
 CARPETA_PDF = Path.home() / "Desktop" / "Finanzas"
 CACHE_FUENTES = Path(__file__).parent / "informe" / ".fuentes.css"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -41,7 +43,9 @@ NOMBRES = {"RECIBOS VARIOS": "Máster PNI", "GO FORTH RUNNERS": "Go Forth Runner
            "TRAINING SCHEMES": "Tribe (ropa de running)", "CAT COPLEFC": "Colegio profesional",
            "Vueling*VILADECANS": "Vueling", "Decatlon": "Decathlon", "Ingles": "Clases de inglés",
            "Inglés": "Clases de inglés", "Xavi": "Clases de inglés",
-           "AGENCIA TRIBUTARI": "Hacienda"}
+           "AGENCIA TRIBUTARI": "Hacienda", "RECIBO UNICO MYBOX": "Seguro MyBox", "COM.DE PROP.FRANC": "Comunidad",
+           "PAGO TRASPASOS": "Ascensor (trimestral)", "IBERDROLA CLIENT.": "Iberdrola", "IBERDROLA CLIENTE": "Iberdrola",
+           "AJUNT.DE CORNELLA": "IBI Ajuntament de Cornellà", "AIGUES DE BARCEL.": "Aigües de Barcelona"}
 
 
 def mes_siguiente(mes):
@@ -68,9 +72,13 @@ def nombre(m):
     if es_generico(m["comercio"]):
         if m["categoria_id"] == "formacion":
             return "Clases de inglés"
+        if (m["categoria_id"] or "").startswith("piso-") and m["importe_cent"] > 0:
+            return "Bizum de la inquilina"
         if m["categoria_id"] == "ahorro-inversion" and m["comercio"] in NOMBRES:
             return NOMBRES[m["comercio"]]
         return m["comercio"].capitalize()
+    if m["comercio"].startswith("PRES."):
+        return "Hipoteca"
     return NOMBRES.get(m["comercio"], m["comercio"])
 
 
@@ -230,20 +238,97 @@ def pdf(pagina, destino):
         shutil.copy(salida, destino)
 
 
+CUENTAS_TXT = {"comun": ("Común", "comun"), "caixabank": ("CaixaBank", "mia"), "efectivo": ("Efectivo", "mia")}
+
+
+def html_detalle(api, mes):
+    """Todos los movimientos del mes: gastos por categoría con subtotal y, aparte, lo que no es gasto."""
+    cats = {c["id"]: c for c in api.leer("categorias", select="*")}
+    fin = ultimo_dia(mes)
+    movs = api.leer("movimientos", select="*", cuenta_id="in.(comun,caixabank,efectivo)",
+                    fecha="gte.%s-01" % mes, **{"and": "(fecha.lte.%s)" % fin}, order="fecha")
+
+    def tabla(lista):
+        filas = []
+        for m in lista:
+            cuenta, q = CUENTAS_TXT.get(m["cuenta_id"], (m["cuenta_id"], "mia"))
+            n = nombre(m)
+            extra = []
+            if m["comercio"] != n and not es_generico(m["comercio"]):
+                extra.append(m["comercio"])
+            if m.get("nota") and m["nota"] != n:
+                extra.append(m["nota"])
+            filas.append('<tr><td class="f num">%s</td><td>%s%s</td><td class="c"><i style="background:var(--%s)"></i>%s</td>'
+                         '<td class="i num%s">%s</td></tr>' % (
+                             "%d %s" % (int(m["fecha"][8:]), CORTOS[int(m["fecha"][5:7]) - 1]), escape(n),
+                             "".join("<small>%s</small>" % escape(e) for e in extra), q, cuenta,
+                             " mas" if m["importe_cent"] > 0 else "",
+                             ("+" if m["importe_cent"] > 0 else "") + euros(m["importe_cent"]).replace("-", "−")))
+        return ('<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Cuenta</th><th class="i">Importe</th>'
+                '</tr></thead><tbody>%s</tbody></table></div>' % "".join(filas))
+
+    def bloque(titulo, lista, total_txt):
+        return '<div class="bloque"><h3>%s<span class="num">%s</span></h3>%s</div>' % (escape(titulo), total_txt, tabla(lista))
+
+    gasto = collections.defaultdict(list)
+    resto = collections.OrderedDict([("Piso de Cornellà", []), ("Ahorro e inversión", []), ("Ingresos", []),
+                                     ("Entre cuentas y no cuenta como gasto", [])])
+    for m in movs:
+        c = cats.get(m["categoria_id"])
+        if es_gasto(m, cats):
+            gasto[m["categoria_id"]].append(m)
+        elif c and c["grupo"] == "piso":
+            resto["Piso de Cornellà"].append(m)
+        elif m["categoria_id"] == "ahorro-inversion":
+            resto["Ahorro e inversión"].append(m)
+        elif m["categoria_id"] == "ingresos" and not m["no_es_gasto"]:
+            resto["Ingresos"].append(m)
+        else:
+            resto["Entre cuentas y no cuenta como gasto"].append(m)
+    orden = sorted(gasto, key=lambda k: sum(m["importe_cent"] for m in gasto[k]))
+    total = -sum(m["importe_cent"] for k in gasto for m in gasto[k])
+    por_q = collections.Counter()
+    for k in gasto:
+        for m in gasto[k]:
+            por_q["comun" if m["cuenta_id"] == "comun" else "mia"] -= m["importe_cent"]
+
+    partes = ['<header style="display:grid;gap:14px"><div class="eyebrow">Cuentas de casa · detalle</div>'
+              '<h1>Movimientos de %s %s</h1><div class="resumen num">' % (nombre_mes(mes), mes[:4])]
+    for etiqueta, valor in (("Gasto del mes", total), ("Común", por_q["comun"]), ("Tuyo", por_q["mia"]),
+                            ("Movimientos", len(movs))):
+        partes.append("<div><span>%s</span><b>%s</b></div>" % (etiqueta, valor if etiqueta == "Movimientos" else euros(valor)))
+    partes.append('</div><p class="sub">Todos los movimientos de la cuenta común, CaixaBank y el efectivo. En verde, '
+                  'dinero que entra: en los gastos son devoluciones y ya están restadas del total de su categoría.</p></header>')
+    partes.append('<section><h2>Gastos por categoría</h2>')
+    for k in orden:
+        c = cats.get(k) or {"nombre": "Sin categoría", "icono": ""}
+        partes.append(bloque("%s %s" % (c["icono"], c["nombre"]), gasto[k], euros(-sum(m["importe_cent"] for m in gasto[k]))))
+    partes.append('</section><section><h2>Fuera del gasto</h2>')
+    for titulo, lista in resto.items():
+        if lista:
+            neto = sum(m["importe_cent"] for m in lista)
+            partes.append(bloque(titulo, lista, ("+" if neto > 0 else "") + euros(neto).replace("-", "−") + " neto"))
+    partes.append('</section><footer>Generado desde la app de Cuentas de casa. Fechas = día de la operación.</footer>')
+    pagina = PLANTILLA_DETALLE.read_text(encoding="utf-8")
+    return pagina.replace("__TITULO__", "Movimientos de %s %s" % (nombre_mes(mes), mes[:4])).replace("__CUERPO__", "\n".join(partes))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("mes", help="AAAA-MM")
     p.add_argument("--html", help="guarda también la página en esta ruta")
     p.add_argument("--sin-pdf", action="store_true")
+    p.add_argument("--detalle", action="store_true", help="todos los movimientos del mes (<Mes> <año> - detalle.pdf)")
     args = p.parse_args()
     env = cuentas.leer_env()
     api = Api(env["SUPABASE_URL"], env["SUPABASE_SERVICE_KEY"])
-    pagina = html(datos(api, args.mes), args.mes)
+    pagina = html_detalle(api, args.mes) if args.detalle else html(datos(api, args.mes), args.mes)
     if args.html:
         Path(args.html).write_text(pagina, encoding="utf-8")
         print("Página:", args.html)
     if not args.sin_pdf:
-        destino = CARPETA_PDF / ("%s %s.pdf" % (nombre_mes(args.mes).capitalize(), args.mes[:4]))
+        destino = CARPETA_PDF / ("%s %s%s.pdf" % (nombre_mes(args.mes).capitalize(), args.mes[:4],
+                                                   " - detalle" if args.detalle else ""))
         pdf(pagina, destino)
         print("PDF:", destino)
 
